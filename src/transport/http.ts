@@ -82,7 +82,22 @@ export async function runHttp(port: number): Promise<void> {
 
   app.all("/mcp", async (req, res) => {
     if (!rateLimit(req, res)) return;
-    await transport.handleRequest(req, res, req.body);
+    try {
+      await transport.handleRequest(req, res, req.body);
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error("[mcp] handleRequest threw:", (e as Error).stack ?? e);
+      if (!res.headersSent) {
+        res.status(500).json({ error: "mcp_handle_failed", detail: (e as Error).message });
+      }
+    }
+  });
+
+  // Surface unhandled rejections in the dispatcher / SDK so we don't get
+  // mystery 500s from Express's default error handler with no body.
+  process.on("unhandledRejection", (reason) => {
+    // eslint-disable-next-line no-console
+    console.error("[mcp] unhandledRejection:", reason);
   });
 
   app.listen(port, () => {
