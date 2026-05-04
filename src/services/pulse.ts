@@ -1,0 +1,71 @@
+/**
+ * XR-Pulse: normalized XRPL signal feed bridging public-source news,
+ * on-chain whale activity, and XLS-70/80/81 permissioned-domain
+ * lifecycle events into one time-ordered stream.
+ *
+ * News carries a four-hour XRPL price-window correlation. Whale rows
+ * carry sender + receiver addresses with XRPScan institutional
+ * labels. Permissioned-domain rows mirror XR-Trust's /events with
+ * cross-product enrichment. Paid via x402 ($0.10 USD per query).
+ */
+
+import type { ServiceDef } from "../types.js";
+
+export const pulse: ServiceDef = {
+  id: "pulse",
+  label: "XR-Pulse",
+  baseUrl: "https://pulse.xrpl-utilities.io",
+  manifestUrl: "https://pulse.xrpl-utilities.io/agents.json",
+  knownSchemaVersions: ["1.10.0", "1.10.1"],
+  tools: [
+    {
+      name: "xrpl_pulse_recent_events",
+      description:
+        "Return the most-recent normalized XRPL signal events newest-first. " +
+        "Mixes three streams: public-source news (regulatory press + " +
+        "central banks + crypto media filtered for XRP/RLUSD/XRPL/Ripple), " +
+        "on-chain whale activity (every Payment above the storage " +
+        "threshold), and XLS-70/80/81 permissioned-domain lifecycle " +
+        "events sourced from XR-Trust. Each event carries title, brief, " +
+        "published_at, source_appearances[], correlation (news only), " +
+        "active_utility (per-source canonical shape), and " +
+        "target_addresses[]. Costs $0.10 USD per call paid via XRPL x402.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          limit: {
+            type: "integer",
+            description: "Max events to return (1-500). Default 50.",
+            minimum: 1,
+            maximum: 500,
+            default: 50,
+          },
+          since_iso: {
+            type: "string",
+            description:
+              "ISO 8601 timestamp; only events with published_at >= this " +
+              "are returned. Optional.",
+          },
+          min_whale_usd: {
+            type: "number",
+            description:
+              "Suppress whale events below this USD threshold. Default " +
+              "$500,000 (whale-grade only). Pass 0 to see the full " +
+              "$50k+ activity stream.",
+            minimum: 0,
+          },
+          payment_signature: {
+            type: "string",
+            description: "x402 v2 PAYMENT-SIGNATURE header.",
+          },
+        },
+        additionalProperties: false,
+      },
+      method: "POST",
+      path: "/events/recent",
+      paid: true,
+      bodyFromArgs: true,
+      stripArgs: ["payment_signature"],
+    },
+  ],
+};
