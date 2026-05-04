@@ -68,21 +68,32 @@ export async function runHttp(port: number): Promise<void> {
     res.json({ status: "ok", service: "xrpl-utilities-mcp", version: "0.1.0" });
   });
 
-  // Single shared MCP server instance. The streamable-http transport
-  // multiplexes multiple concurrent client sessions over the /mcp
-  // route via per-request session ids that the SDK manages.
-  const mcpServer = buildServer({
-    bypassKey: process.env["MCP_BYPASS_KEY"],
-    userAgent: `xrpl-utilities-mcp/0.1.0 (http)`,
-  });
-  const transport = new StreamableHTTPServerTransport({
-    sessionIdGenerator: undefined, // stateless mode - each request stands alone
-  });
-  await mcpServer.connect(transport);
-
+  // Stateless mode: each /mcp request gets a fresh Server + Transport
+  // pair. The MCP SDK's streamable-http transport, even with
+  // sessionIdGenerator: undefined, doesn't reliably handle a shared
+  // transport instance across multiple unrelated requests - the second
+  // call returns 500 because the transport's internal state is still
+  // tied to the first request. The recommended stateless pattern is
+  // build-connect-handle-close per request. Cheap: the Server object
+  // is just function pointers, no expensive state.
   app.all("/mcp", async (req, res) => {
     if (!rateLimit(req, res)) return;
+    let transport: StreamableHTTPServerTransport | null = null;
     try {
+      const mcpServer = buildServer({
+        bypassKey: process.env["MCP_BYPASS_KEY"],
+        userAgent: `xrpl-utilities-mcp/0.1.0 (http)`,
+      });
+      transport = new StreamableHTTPServerTransport({
+        sessionIdGenerator: undefined, // stateless
+      });
+      // Make sure the transport is torn down when the response closes,
+      // so a long-running SSE stream doesn't leak file descriptors.
+      res.on("close", () => {
+        transport?.close().catch(() => {});
+        mcpServer.close().catch(() => {});
+      });
+      await mcpServer.connect(transport);
       await transport.handleRequest(req, res, req.body);
     } catch (e) {
       // eslint-disable-next-line no-console
