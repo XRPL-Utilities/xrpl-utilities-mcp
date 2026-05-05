@@ -16,7 +16,7 @@ import { ALL_TOOLS, SERVICES } from "./services/index.js";
 import { dispatchTool, type DispatchOptions } from "./dispatch.js";
 
 const SERVER_NAME = "xrpl-utilities";
-const SERVER_VERSION = "0.1.5";
+const SERVER_VERSION = "0.1.6";
 
 export function buildServer(opts: DispatchOptions = {}): Server {
   const server = new Server(

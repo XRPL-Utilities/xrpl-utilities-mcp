@@ -57,7 +57,7 @@ export async function runHttp(port: number): Promise<void> {
       service: "xrpl-utilities-mcp",
       description:
         "MCP server for the XRPL-Utilities portfolio (Sentinel, Pulse, Telemetry, Trust). Connect any MCP client to /mcp.",
-      version: "0.1.5",
+      version: "0.1.6",
       mcp_endpoint: "/mcp",
       docs: "https://github.com/XRPL-Utilities/xrpl-utilities-mcp",
       portfolio: "https://xrpl-utilities.com",
@@ -65,7 +65,7 @@ export async function runHttp(port: number): Promise<void> {
   });
 
   app.get("/healthz", async (_req, res) => {
-    res.json({ status: "ok", service: "xrpl-utilities-mcp", version: "0.1.5" });
+    res.json({ status: "ok", service: "xrpl-utilities-mcp", version: "0.1.6" });
   });
 
   // Stateless mode: each /mcp request gets a fresh Server + Transport
@@ -82,7 +82,7 @@ export async function runHttp(port: number): Promise<void> {
     try {
       const mcpServer = buildServer({
         bypassKey: process.env["MCP_BYPASS_KEY"],
-        userAgent: `xrpl-utilities-mcp/0.1.5 (http)`,
+        userAgent: `xrpl-utilities-mcp/0.1.6 (http)`,
       });
       transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: undefined, // stateless
