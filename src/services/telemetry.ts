@@ -50,7 +50,7 @@ export const telemetry: ServiceDef = {
       },
       method: "POST",
       path: "/scan",
-      paid: true,
+      authMode: "inline_x402",
       bodyFromArgs: true,
       stripArgs: ["payment_signature"],
     },
@@ -59,10 +59,12 @@ export const telemetry: ServiceDef = {
       description:
         "Start the async invoice flow: returns invoice_id, amount in " +
         "drops, payTo address, deepLink + QR, and expiry. The caller " +
-        "pays the XRPL Payment from any wallet, then polls " +
-        "xrpl_telemetry_get_status until paid: true, then calls " +
-        "xrpl_telemetry_get_results. Free to call; the underlying " +
-        "snapshot is what costs $0.10 USD.",
+        "pays the XRPL Payment to that address from any wallet, then " +
+        "polls xrpl_telemetry_get_status until paid: true, then calls " +
+        "xrpl_telemetry_get_results. The MCP wrapper itself doesn't " +
+        "require a payment_signature header, but the snapshot still " +
+        "costs $0.10 USD - the payment just happens out-of-band as a " +
+        "regular XRPL Payment instead of an inline x402 header.",
       inputSchema: {
         type: "object",
         properties: {},
@@ -70,7 +72,7 @@ export const telemetry: ServiceDef = {
       },
       method: "POST",
       path: "/quote",
-      paid: false,
+      authMode: "async_invoice",
       bodyFromArgs: true,
     },
     {
@@ -78,7 +80,9 @@ export const telemetry: ServiceDef = {
       description:
         "Poll the status of an invoice from xrpl_telemetry_get_quote. " +
         "Returns paid (bool), amount, ledger_index when settled, and " +
-        "expiry. Free to call.",
+        "expiry. The MCP wrapper itself doesn't require a payment header " +
+        "(the operator's check is just reading the validated XRPL ledger " +
+        "for the deposit transaction).",
       inputSchema: {
         type: "object",
         properties: {
@@ -92,14 +96,15 @@ export const telemetry: ServiceDef = {
       },
       method: "GET",
       path: "/status/{invoice_id}",
-      paid: false,
+      authMode: "async_invoice",
     },
     {
       name: "xrpl_telemetry_get_results",
       description:
         "Fetch the full TelemetryPayload for an invoice once paid. Same " +
-        "shape as xrpl_telemetry_snapshot. Free to call (the payment " +
-        "happened on the underlying invoice).",
+        "shape as xrpl_telemetry_snapshot. The MCP wrapper doesn't need " +
+        "a payment header here because the $0.10 already settled when " +
+        "the caller paid the deeplink in step 2 of the flow.",
       inputSchema: {
         type: "object",
         properties: {
@@ -113,7 +118,7 @@ export const telemetry: ServiceDef = {
       },
       method: "GET",
       path: "/results/{invoice_id}",
-      paid: false,
+      authMode: "async_invoice",
     },
   ],
 };

@@ -98,13 +98,13 @@ export async function dispatchTool(
   // service as its dev-bypass header).
   const headers: Record<string, string> = {
     Accept: "application/json",
-    "User-Agent": opts.userAgent ?? "xrpl-utilities-mcp/0.1.1",
+    "User-Agent": opts.userAgent ?? "xrpl-utilities-mcp/0.1.2",
   };
 
   const callerPaymentSig = stringArg(args.payment_signature);
   const callerBypassKey = stringArg(args._bypass_key);
 
-  if (tool.paid) {
+  if (tool.authMode === "inline_x402") {
     if (callerPaymentSig) {
       headers["PAYMENT-SIGNATURE"] = callerPaymentSig;
     } else if (callerBypassKey && opts.bypassKey && callerBypassKey === opts.bypassKey) {
@@ -118,6 +118,10 @@ export async function dispatchTool(
       // MCP server is a transparent proxy here, not an enforcer.
     }
   }
+  // async_invoice + free both fall through with no PAYMENT-SIGNATURE
+  // header. async_invoice tools wrap the Telemetry quote/status/results
+  // flow where payment happens out-of-band; free is reserved for
+  // future pure-metadata wrappers.
 
   // Build the request URL (query for GET, body for POST).
   let url = baseUrl + path;

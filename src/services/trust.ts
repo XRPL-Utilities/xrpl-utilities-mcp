@@ -49,7 +49,7 @@ export const trust: ServiceDef = {
       },
       method: "GET",
       path: "/domains",
-      paid: true,
+      authMode: "inline_x402",
     },
     {
       name: "xrpl_trust_get_domain",
@@ -79,7 +79,7 @@ export const trust: ServiceDef = {
       },
       method: "GET",
       path: "/domain/{domain_id}",
-      paid: true,
+      authMode: "inline_x402",
     },
     {
       name: "xrpl_trust_credential_issuers",
@@ -101,7 +101,7 @@ export const trust: ServiceDef = {
       },
       method: "GET",
       path: "/credentials/issuers",
-      paid: true,
+      authMode: "inline_x402",
     },
     {
       name: "xrpl_trust_recent_events",
@@ -143,7 +143,7 @@ export const trust: ServiceDef = {
       },
       method: "GET",
       path: "/events",
-      paid: true,
+      authMode: "inline_x402",
     },
   ],
 };

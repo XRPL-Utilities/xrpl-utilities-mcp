@@ -63,7 +63,7 @@ export const pulse: ServiceDef = {
       },
       method: "POST",
       path: "/events/recent",
-      paid: true,
+      authMode: "inline_x402",
       bodyFromArgs: true,
       stripArgs: ["payment_signature"],
     },

@@ -13,9 +13,36 @@ import type { JSONSchema7 } from "./jsonschema.js";
 export type HttpMethod = "GET" | "POST";
 
 /**
+ * Three auth modes are possible per tool:
+ *
+ *  - inline_x402:  caller passes `payment_signature` in tool args; the
+ *                  dispatcher forwards it as the PAYMENT-SIGNATURE
+ *                  header on the underlying call. Standard x402 v2
+ *                  verify-then-work-then-settle. $0.10 USD lands on
+ *                  the operator wallet per successful call.
+ *
+ *  - async_invoice: this MCP tool wraps one step of the Telemetry
+ *                  three-step flow (quote -> pay -> status -> results).
+ *                  The MCP wrapper itself doesn't need a payment header
+ *                  - the actual XRPL Payment happens out-of-band via
+ *                  the deeplink / QR returned by quote. The operator
+ *                  still earns $0.10 per snapshot, just settled via a
+ *                  regular Payment instead of an inline x402 header.
+ *
+ *  - free:          truly free. Reserved for endpoints like /healthz
+ *                  or /schema mirrors. Not used today; placeholder for
+ *                  future XR-* services that may expose pure metadata.
+ *
+ * The `paid` field has been retained as a deprecated alias - true was
+ * inline_x402, false was async_invoice or free. New code should switch
+ * on authMode.
+ */
+export type AuthMode = "inline_x402" | "async_invoice" | "free";
+
+/**
  * A single tool definition. The MCP server exposes one MCP tool per
  * entry. Auth/payment is handled per-call by the dispatcher based on
- * the `paid` flag and the caller-supplied `payment_signature` arg.
+ * the tool's authMode and the caller-supplied `payment_signature` arg.
  */
 export interface ToolDef {
   /** MCP tool name. Convention: xrpl_<service>_<verb>. */
@@ -32,13 +59,8 @@ export interface ToolDef {
    * Example: "/domain/{domain_id}".
    */
   path: string;
-  /**
-   * Whether this endpoint requires x402 payment. When true, the caller
-   * must supply `payment_signature` in the tool args (forwarded as the
-   * PAYMENT-SIGNATURE header) OR the operator must have set MCP_BYPASS_KEY
-   * (forwarded as the dev-bypass header on the underlying service).
-   */
-  paid: boolean;
+  /** Auth model for this tool. See AuthMode docs above. */
+  authMode: AuthMode;
   /**
    * If true, the body of the HTTP request comes from the input args
    * (minus payment_signature). If false, args go in the query string
