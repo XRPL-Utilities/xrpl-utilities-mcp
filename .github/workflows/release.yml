@@ -1,0 +1,60 @@
+name: Release
+
+# Publish to npm whenever a v* tag is pushed. Cuts the release cycle to
+# a single command:
+#
+#   npm version patch       # bumps package.json, creates a v* tag
+#   git push --follow-tags  # pushes commit + tag, kicks off this workflow
+#
+# Auth via the NPM_TOKEN repository secret (granular publish-only token,
+# scoped to @xrpl-utilities). Once we move to OIDC trusted-publisher
+# (post first-publish), we can drop NODE_AUTH_TOKEN and let npm trust
+# the workflow identity directly.
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # id-token: write enables npm provenance — sigstore-signed proof
+      # that this exact published artifact was built from this repo at
+      # this commit by GitHub Actions. Shows as a green checkmark on
+      # the npm package page; useful trust signal for an MCP server
+      # people are about to install and run with credentials.
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Verify package.json version matches the tag
+        # Belt-and-braces: refuse to publish if someone tags v0.2.0 but
+        # forgot to bump package.json from 0.1.2. npm would reject the
+        # mismatched version anyway, but the error message is opaque.
+        run: |
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          if [ "$PKG_VERSION" != "$TAG_VERSION" ]; then
+            echo "::error::package.json version ($PKG_VERSION) does not match tag ($TAG_VERSION)"
+            exit 1
+          fi
+          echo "version check OK: $PKG_VERSION"
+
+      - name: Publish to npm
+        run: npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -88,6 +88,22 @@ node dist/index.js --transport http --port 8080
 Point MCP Inspector at `http://localhost:8080/mcp` to walk through
 tool definitions interactively.
 
+## Releases
+
+Releases are cut by tag push. The `Release` workflow builds, validates
+that `package.json` version matches the tag, then publishes to npm
+with sigstore provenance.
+
+```bash
+npm version patch       # or minor / major
+git push --follow-tags  # pushes commit + tag, CI does the rest
+```
+
+The published artifact appears at
+[npmjs.com/package/@xrpl-utilities/mcp](https://www.npmjs.com/package/@xrpl-utilities/mcp)
+within ~90 seconds. Provenance attestation is visible on the package
+page as a green check.
+
 ## License
 
 MIT. Full portfolio at [xrpl-utilities.com](https://xrpl-utilities.com).
