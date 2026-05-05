@@ -100,7 +100,7 @@ export async function dispatchTool(
   // service as its dev-bypass header).
   const headers: Record<string, string> = {
     Accept: "application/json",
-    "User-Agent": opts.userAgent ?? "xrpl-utilities-mcp/0.1.3",
+    "User-Agent": opts.userAgent ?? "xrpl-utilities-mcp/0.1.4",
   };
 
   const callerPaymentSig = stringArg(args.payment_signature);

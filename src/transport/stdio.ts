@@ -21,7 +21,7 @@ import { buildServer } from "../server.js";
 export async function runStdio(): Promise<void> {
   const server = buildServer({
     bypassKey: process.env["MCP_BYPASS_KEY"],
-    userAgent: `xrpl-utilities-mcp/0.1.3 (stdio)`,
+    userAgent: `xrpl-utilities-mcp/0.1.4 (stdio)`,
   });
   const transport = new StdioServerTransport();
   await server.connect(transport);
