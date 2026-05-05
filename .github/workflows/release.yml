@@ -33,7 +33,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-          registry-url: "https://registry.npmjs.org"
 
       - name: Install dependencies
         run: npm ci
@@ -54,7 +53,21 @@ jobs:
           fi
           echo "version check OK: $PKG_VERSION"
 
+      - name: Configure npm auth
+        # Write the registry credential explicitly. setup-node's
+        # registry-url integration wasn't picking up NODE_AUTH_TOKEN
+        # in our first run (ENEEDAUTH at publish time). The explicit
+        # .npmrc write is the canonical fallback that always works.
+        run: |
+          if [ -z "$NPM_TOKEN" ]; then
+            echo "::error::NPM_TOKEN secret is empty - check repository secrets"
+            exit 1
+          fi
+          echo "npm token length: ${#NPM_TOKEN} chars (expecting 40+)"
+          echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/.npmrc
+          npm whoami
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
       - name: Publish to npm
         run: npm publish --access public --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
