@@ -68,7 +68,7 @@ flowchart TB
 
     %% inter-service
     PULSE -.->|"/events polling<br/>(domain lifecycle)"| TRUST
-    PULSE -.->|"/healthz<br/>(active_float context<br/>via SISTER_PRODUCT_KEY)"| TELEMETRY
+    PULSE -.->|"/healthz<br/>(active_float context<br/>via internal bypass header)"| TELEMETRY
     PULSE -.->|"sentinel_lookup<br/>(whale cross-ref)"| SENTINEL
 
     %% backend -> ledger
@@ -118,8 +118,8 @@ flowchart TB
 | From | To | Purpose | Auth |
 |---|---|---|---|
 | Pulse | Trust `/events` | XLS-70/80/81 lifecycle ingestion (every 120s) | Public read |
-| Pulse | Telemetry `/healthz` | Active Float context attached to whale events | `SISTER_PRODUCT_KEY` shared bypass |
-| Pulse | Sentinel (`sentinel_lookup`) | Cross-reference for whale addresses (sender + receiver classification) | `TELEMETRY_SISTER_KEY` |
+| Pulse | Telemetry `/healthz` | Active Float context attached to whale events | internal sister-product bypass header |
+| Pulse | Sentinel (`sentinel_lookup`) | Cross-reference for whale addresses (sender + receiver classification) | internal sister-product bypass header |
 
 ### Schema-discipline boundary
 

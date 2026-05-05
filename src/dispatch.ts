@@ -111,7 +111,7 @@ export async function dispatchTool(
       headers["PAYMENT-SIGNATURE"] = callerPaymentSig;
     } else if (callerBypassKey && opts.bypassKey && callerBypassKey === opts.bypassKey) {
       // Operator-issued bypass. Forward as the dev-bypass header that
-      // the underlying services accept (D_BYPASS_KEY pattern).
+      // the underlying services accept.
       headers["PAYMENT-SIGNATURE"] = callerBypassKey;
     } else {
       // No auth supplied. Fire the request anyway so the caller gets
