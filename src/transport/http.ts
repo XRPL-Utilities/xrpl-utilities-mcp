@@ -19,7 +19,9 @@
 import express, { type Request, type Response } from "express";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { buildServer } from "../server.js";
+import { SERVICES, ALL_TOOLS } from "../services/index.js";
 
+const SERVER_VERSION = "0.1.7";
 const RATE_WINDOW_MS = 60_000;
 const RATE_LIMIT_PER_WINDOW = 60; // generous; agents typically fire bursts
 
@@ -57,15 +59,127 @@ export async function runHttp(port: number): Promise<void> {
       service: "xrpl-utilities-mcp",
       description:
         "MCP server for the XRPL-Utilities portfolio (Sentinel, Pulse, Telemetry, Trust). Connect any MCP client to /mcp.",
-      version: "0.1.6",
+      version: SERVER_VERSION,
       mcp_endpoint: "/mcp",
+      manifest: "/agents.json",
+      well_known_manifest: "/.well-known/agents.json",
+      llms_discovery: "/llms.txt",
       docs: "https://github.com/XRPL-Utilities/xrpl-utilities-mcp",
       portfolio: "https://xrpl-utilities.com",
     });
   });
 
   app.get("/healthz", async (_req, res) => {
-    res.json({ status: "ok", service: "xrpl-utilities-mcp", version: "0.1.6" });
+    res.json({ status: "ok", service: "xrpl-utilities-mcp", version: SERVER_VERSION });
+  });
+
+  // ---- Discovery surfaces for non-MCP-speaking crawlers ----
+  // The /mcp endpoint speaks JSON-RPC (POST + SSE) and is invisible
+  // to a regular HTTP crawler. These routes give an LLM crawler or
+  // search engine something to chew on so the MCP server isn't a
+  // discoverability black hole.
+
+  const manifest = () => ({
+    schema_version: SERVER_VERSION,
+    name: "XRPL-Utilities MCP",
+    provider: "XRPL-Utilities™",
+    description:
+      "Model Context Protocol server exposing the XRPL-Utilities portfolio " +
+      "(Sentinel, Pulse, Telemetry, Trust) as " + ALL_TOOLS.length + " callable tools " +
+      "for AI agents. Stateless passthrough proxy: callers supply their own " +
+      "x402 v2 payment header per tool call. Settled inline via the t54 " +
+      "facilitator on XRPL mainnet; $0.10 USD per paid call lands on the " +
+      "operator treasury wallet. The MCP server holds no wallets and takes no cut.",
+    service_status: "live",
+    endpoints: {
+      base_url: "https://mcp.xrpl-utilities.io",
+      mcp: "/mcp",
+      discovery: "/llms.txt",
+      manifest: "/agents.json",
+      well_known_manifest: "/.well-known/agents.json",
+      health: "/healthz",
+    },
+    transports: ["stdio", "streamable-http"],
+    tool_count: ALL_TOOLS.length,
+    tools: ALL_TOOLS.map((t) => ({
+      name: t.name,
+      description: t.description,
+      auth_mode: t.authMode,
+    })),
+    underlying_services: SERVICES.map((s) => ({
+      id: s.id,
+      label: s.label,
+      base_url: s.baseUrl,
+      manifest_url: s.manifestUrl,
+    })),
+    homepage: "https://xrpl-utilities.com",
+    repository: "https://github.com/XRPL-Utilities/xrpl-utilities-mcp",
+    npm: "https://www.npmjs.com/package/@xrpl-utilities/mcp",
+    license: "MIT",
+  });
+
+  app.get("/agents.json", (_req, res) => res.json(manifest()));
+  app.get("/.well-known/agents.json", (_req, res) => res.json(manifest()));
+
+  app.get("/llms.txt", (_req, res) => {
+    const toolList = ALL_TOOLS.map((t) =>
+      `- \`${t.name}\` [${t.authMode}]`,
+    ).join("\n");
+    const body = [
+      "# XRPL-Utilities MCP™",
+      "",
+      "Model Context Protocol server exposing the XRPL-Utilities portfolio",
+      `(Sentinel, Pulse, Telemetry, Trust) as ${ALL_TOOLS.length} callable tools for AI agents.`,
+      "Stateless passthrough proxy.",
+      "Provider: XRPL-Utilities™ LLC.",
+      "",
+      "## Connect",
+      "- Hosted (any MCP client, including Claude Desktop with HTTP support):",
+      "  POST JSON-RPC + SSE to `https://mcp.xrpl-utilities.io/mcp`",
+      "- Local (Claude Desktop config):",
+      "  ```",
+      "  npm i @xrpl-utilities/mcp",
+      "  npx @xrpl-utilities/mcp --transport stdio",
+      "  ```",
+      "",
+      "## Tools",
+      toolList,
+      "",
+      "## Auth model",
+      "Each `inline_x402` tool requires the caller to pass `payment_signature` in",
+      "tool args - a base64-JSON-encoded x402 v2 payment header signing an XRPL",
+      "Payment that matches one of the requirements returned by an unauthenticated",
+      "probe. The MCP server forwards it as the `PAYMENT-SIGNATURE` header on the",
+      "underlying call. $0.10 USD per call (XRP or RLUSD), settled inline via the",
+      "t54 facilitator. The `async_invoice` tools (Telemetry quote/status/results)",
+      "use an out-of-band XRPL Payment to a deeplink instead of an inline header.",
+      "",
+      "## Discovery",
+      "- Manifest:    https://mcp.xrpl-utilities.io/agents.json",
+      "- Source:      https://github.com/XRPL-Utilities/xrpl-utilities-mcp",
+      "- npm package: https://www.npmjs.com/package/@xrpl-utilities/mcp",
+      "- Portfolio:   https://xrpl-utilities.com",
+      "",
+      "## What this is NOT",
+      "Not a wallet. Not a custodian. Not an editorial product. Not investment",
+      "advice. The MCP server holds no wallets and takes no cut - same x402",
+      "settlement model as direct API calls, just wrapped as MCP tools so AI",
+      "agents can discover and use them via tool-completion.",
+      "",
+    ].join("\n");
+    res.type("text/markdown; charset=utf-8").send(body);
+  });
+
+  app.get("/robots.txt", (_req, res) => {
+    const body = [
+      "# xrpl-utilities-mcp is built to be discovered by AI agents and crawlers.",
+      "# Machine-readable manifests: /agents.json, /.well-known/agents.json, /llms.txt",
+      "# MCP JSON-RPC endpoint: /mcp",
+      "User-agent: *",
+      "Allow: /",
+      "",
+    ].join("\n");
+    res.type("text/plain; charset=utf-8").send(body);
   });
 
   // Stateless mode: each /mcp request gets a fresh Server + Transport
@@ -82,7 +196,7 @@ export async function runHttp(port: number): Promise<void> {
     try {
       const mcpServer = buildServer({
         bypassKey: process.env["MCP_BYPASS_KEY"],
-        userAgent: `xrpl-utilities-mcp/0.1.6 (http)`,
+        userAgent: `xrpl-utilities-mcp/${SERVER_VERSION} (http)`,
       });
       transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: undefined, // stateless
