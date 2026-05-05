@@ -91,8 +91,11 @@ unauthenticated probe. The MCP server forwards it as the
 the operator wallet per successful call, settled inline via the
 [t54](https://t54.ai) facilitator.
 
-Both XRP (dynamic, ~71,428 drops at $1.40 spot) and RLUSD (flat 0.10)
-are accepted. Pick the asset that matches your wallet's holdings.
+Both XRP and RLUSD are accepted. The XRP amount in drops is computed
+at request time against the live oracle spot so it always equals
+~$0.10 USD; the RLUSD amount is a flat 0.10. Pick the asset that
+matches your wallet's holdings - the exact requirements come back in
+the 402 challenge body so you don't have to track price yourself.
 
 If you call a paid tool without `payment_signature`, the server
 returns the actual 402 challenge wrapped in the MCP response so the
