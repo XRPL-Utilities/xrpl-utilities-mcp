@@ -3,24 +3,26 @@
  * service + tool, builds the underlying HTTP request, forwards the
  * response.
  *
- * Auth model:
+ * Auth model (per-tool, see ToolDef.authMode):
  *
- *   1. Caller-provided x402 payment header (the default path).
- *      The tool args carry `payment_signature` which gets forwarded
- *      as the PAYMENT-SIGNATURE header on the underlying call. This
- *      keeps the agent-payable model intact - every paid tool call
- *      is a real x402 transaction settled on XRPL via t54, generating
- *      revenue to the operator wallet exactly the same as a direct
- *      API call would.
+ *   inline_x402   - caller passes payment_signature in tool args; the
+ *                   dispatcher forwards it as the PAYMENT-SIGNATURE
+ *                   header. Standard x402 v2; \$0.10 USD settled inline
+ *                   via the t54 facilitator on every successful call.
  *
- *   2. Operator-issued bypass key (opt-in for friendlies/demos).
- *      If MCP_BYPASS_KEY is set on the MCP process AND the tool call
- *      includes the matching key (via env or header), the dispatcher
- *      uses it as the dev-bypass header on the underlying call. This
- *      bypasses payment but is rate-limited at the MCP layer to
- *      prevent abuse.
+ *   async_invoice - MCP wrapper around one step of Telemetry's three-
+ *                   step flow (quote -> pay -> status -> results). The
+ *                   wrapper itself doesn't carry a payment header; the
+ *                   actual XRPL Payment happens out-of-band when the
+ *                   caller pays the deeplink returned by quote.
  *
- *   3. Free endpoints. Tools with paid: false skip both paths.
+ *   free          - no payment ever. Reserved for future pure-metadata
+ *                   wrappers; not used by any current tool.
+ *
+ * Operator-issued bypass: if MCP_BYPASS_KEY is set on the MCP process
+ * AND an inline_x402 tool call includes a matching `_bypass_key` in
+ * args, the dispatcher forwards it as the dev-bypass header on the
+ * underlying service (rate-limited at the MCP transport layer).
  *
  * The web-origin bypass that the marketing site uses is deliberately
  * NOT honored here: that bypass is meant for the human-facing site,
