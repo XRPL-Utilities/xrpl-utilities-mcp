@@ -17,11 +17,12 @@
 
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { buildServer } from "../server.js";
+import { SERVER_VERSION } from "../version.js";
 
 export async function runStdio(): Promise<void> {
   const server = buildServer({
     bypassKey: process.env["MCP_BYPASS_KEY"],
-    userAgent: `xrpl-utilities-mcp/0.1.7 (stdio)`,
+    userAgent: `xrpl-utilities-mcp/${SERVER_VERSION} (stdio)`,
   });
   const transport = new StdioServerTransport();
   await server.connect(transport);

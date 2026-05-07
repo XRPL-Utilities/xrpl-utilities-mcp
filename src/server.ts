@@ -14,9 +14,9 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { ALL_TOOLS, SERVICES } from "./services/index.js";
 import { dispatchTool, type DispatchOptions } from "./dispatch.js";
+import { SERVER_VERSION } from "./version.js";
 
 const SERVER_NAME = "xrpl-utilities";
-const SERVER_VERSION = "0.1.7";
 
 export function buildServer(opts: DispatchOptions = {}): Server {
   const server = new Server(

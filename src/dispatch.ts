@@ -31,6 +31,7 @@
  */
 
 import { findToolOwner } from "./services/index.js";
+import { SERVER_VERSION } from "./version.js";
 
 export interface DispatchOptions {
   /**
@@ -100,7 +101,7 @@ export async function dispatchTool(
   // service as its dev-bypass header).
   const headers: Record<string, string> = {
     Accept: "application/json",
-    "User-Agent": opts.userAgent ?? "xrpl-utilities-mcp/0.1.7",
+    "User-Agent": opts.userAgent ?? `xrpl-utilities-mcp/${SERVER_VERSION}`,
   };
 
   const callerPaymentSig = stringArg(args.payment_signature);

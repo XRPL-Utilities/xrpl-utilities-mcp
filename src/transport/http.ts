@@ -20,8 +20,7 @@ import express, { type Request, type Response } from "express";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { buildServer } from "../server.js";
 import { SERVICES, ALL_TOOLS } from "../services/index.js";
-
-const SERVER_VERSION = "0.1.7";
+import { SERVER_VERSION } from "../version.js";
 const RATE_WINDOW_MS = 60_000;
 const RATE_LIMIT_PER_WINDOW = 60; // generous; agents typically fire bursts
 
