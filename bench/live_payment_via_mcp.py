@@ -56,7 +56,11 @@ def main() -> int:
     # a clean error instead of a top-of-file ImportError.
     try:
         from xrpl.wallet import Wallet
-        from x402_xrpl.clients.requests import X402RequestsSession
+        from x402_xrpl.client.presigned_payment_payer import (
+            XRPLPresignedPaymentPayer,
+            XRPLPresignedPaymentPayerOptions,
+        )
+        from x402_xrpl.types import PaymentRequirements
     except ImportError as e:
         fail(f"missing dependency: {e}; ensure xrpl + x402-xrpl are installed", code=2)
 
@@ -103,24 +107,7 @@ def main() -> int:
         fail("no XRP option in accepts[]", code=2)
     ok(f"probe -> 402 with {len(accepts)} accepts[] option(s); using XRP @ {xrp_opt.get('amount')} drops")
 
-    # 2. Presign matching the XRP option using x402_xrpl helpers. The
-    # SDK exposes a low-level signer that produces an encoded
-    # PaymentPayload header value identical to what
-    # X402RequestsSession would send.
-    try:
-        from x402_xrpl.payment import sign_payment_payload
-    except ImportError:
-        # Fallback: use X402RequestsSession's internal — but that's
-        # private API. Instead, run X402RequestsSession against MCP
-        # directly. Skip the manual-presign branch.
-        sign_payment_payload = None  # type: ignore
-
-    # 3. Drive X402RequestsSession against the MCP endpoint with a
-    # tools/call body. The session will see the JSON-RPC error wrapping
-    # of the 402 — that's the regression risk we want to surface. If
-    # MCP correctly proxies 402 + accepts[], the session presigns and
-    # retries automatically and we get back a JSON-RPC `result` with
-    # the scan content + a PAYMENT-RESPONSE header.
+    # 2. Build the JSON-RPC envelope.
     rpc_body = {
         "jsonrpc": "2.0",
         "id": 1,
@@ -131,32 +118,40 @@ def main() -> int:
         },
     }
 
-    # X402RequestsSession works at the HTTP layer — it watches for a
-    # 402 status code on the request it just made. MCP wraps upstream
-    # 402s inside a 200 JSON-RPC envelope (with an error/structuredContent
-    # field), so the session won't auto-resign. We have to do this
-    # explicitly: use the bypass-key mode if available; else
-    # presign-against-Sentinel-then-submit-via-MCP.
+    # 3. Resolve the payment_signature.
+    #
+    # MCP wraps upstream 402s inside a 200 JSON-RPC envelope, so we
+    # can't lean on X402RequestsSession's auto-resign loop (which only
+    # fires on a real HTTP 402). Two modes:
+    #   - Bypass: D_BYPASS_KEY env var → free regression test of the
+    #     MCP transport envelope without spending money.
+    #   - Paid: presign manually against the probe's accepts[] entry
+    #     using x402_xrpl's XRPLPresignedPaymentPayer (the same signer
+    #     X402RequestsSession uses internally).
     bypass_key = os.environ.get("D_BYPASS_KEY", "")
     if bypass_key:
-        # Bypass mode: free regression test. Doesn't validate the
-        # XRPL payment path, but DOES validate the MCP transport
-        # envelope end-to-end. Operator opts into the paid path by
-        # unsetting D_BYPASS_KEY in the close_out env.
         rpc_body["params"]["arguments"]["payment_signature"] = bypass_key
         cost_label = "free (bypass-key)"
     else:
-        # Paid mode: presign manually against the probe's challenge.
-        # We've already got the accepts[] option; build a signed
-        # PaymentPayload using x402_xrpl's encoder.
-        if sign_payment_payload is None:
-            fail("x402_xrpl.payment.sign_payment_payload not importable; cannot presign", code=2)
         try:
-            signed = sign_payment_payload(
-                wallet=wallet,
-                rpc_url=XRPL_RPC_URL,
-                payment_requirement=xrp_opt,
+            invoice_id = (xrp_opt.get("extra") or {}).get("invoiceId")
+            req = PaymentRequirements(
+                scheme=xrp_opt["scheme"],
+                network=xrp_opt["network"],
+                amount=xrp_opt["amount"],
+                asset=xrp_opt["asset"],
+                pay_to=xrp_opt["payTo"],
+                max_timeout_seconds=int(xrp_opt.get("maxTimeoutSeconds", 600)),
+                extra=xrp_opt.get("extra"),
             )
+            payer = XRPLPresignedPaymentPayer(
+                XRPLPresignedPaymentPayerOptions(
+                    wallet=wallet,
+                    network=xrp_opt["network"],  # 'xrpl:0' for mainnet
+                    rpc_url=XRPL_RPC_URL,
+                ),
+            )
+            signed = payer.create_payment_header(req, invoice_id=invoice_id)
         except Exception as e:
             fail(f"presign failed: {type(e).__name__}: {e}", code=2)
         rpc_body["params"]["arguments"]["payment_signature"] = signed
