@@ -16,19 +16,22 @@ export const pulse: ServiceDef = {
   label: "XR-Pulse",
   baseUrl: "https://pulse.xrpl-utilities.io",
   manifestUrl: "https://pulse.xrpl-utilities.io/agents.json",
-  knownSchemaVersions: ["1.13.0", "1.14.0", "1.15.0", "1.16.0", "1.16.1", "1.17.0", "1.18.0"],
+  knownSchemaVersions: ["1.13.0", "1.14.0", "1.15.0", "1.16.0", "1.16.1", "1.17.0", "1.18.0", "1.19.0"],
   tools: [
     {
       name: "xrpl_pulse_recent_events",
       description:
         "Return the most-recent normalized XRPL signal events newest-first. " +
-        "Mixes three streams: public-source news (regulatory press + " +
+        "Mixes four streams: public-source news (regulatory press + " +
         "central banks + crypto media filtered for XRP/RLUSD/XRPL/Ripple), " +
         "on-chain whale activity (every Payment above the storage " +
-        "threshold), and XLS-70/80/81 permissioned-domain lifecycle " +
-        "events sourced from XR-Trust. Each event carries title, brief, " +
-        "published_at, source_appearances[], correlation (news only), " +
-        "active_utility (per-source canonical shape), and " +
+        "threshold), XLS-70/80/81 permissioned-domain lifecycle events " +
+        "sourced from XR-Trust, and Sentinel state-change signals " +
+        "(activity-level transitions + first-fire of " +
+        "INSTITUTIONAL_SCALE_FLOW / DORMANT_REAWAKENING / " +
+        "SCORE_TRAJECTORY_BOT_ONBOARDING). Each event carries title, " +
+        "brief, published_at, source_appearances[], correlation (news " +
+        "only), active_utility (per-source canonical shape), and " +
         "target_addresses[]. Costs $0.10 USD per call paid via XRPL x402.",
       inputSchema: {
         type: "object",
@@ -63,6 +66,54 @@ export const pulse: ServiceDef = {
       },
       method: "POST",
       path: "/events/recent",
+      authMode: "inline_x402",
+      bodyFromArgs: true,
+      stripArgs: ["payment_signature"],
+    },
+    {
+      name: "xrpl_pulse_events_by_address",
+      description:
+        "Return Pulse events that reference a specific XRPL classic " +
+        "address, newest-first. Match strategy spans all event sources: " +
+        "whale events where the address is sender or receiver, " +
+        "sentinel_signal events for that address, news + permissioned- " +
+        "domain events whose target_addresses[] includes it. Useful " +
+        "as the on-chain-history complement to xrpl_sentinel_scan " +
+        "(behavioral classification of one wallet); together they answer " +
+        "'what does this wallet look like AND what has it actually been " +
+        "doing on the public feed?'. No title-similarity clustering on " +
+        "this endpoint - events about the same wallet aren't necessarily " +
+        "about the same story. Costs $0.10 USD per call paid via XRPL x402.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          address: {
+            type: "string",
+            description: "XRPL classic address (starts with 'r', 25-35 chars).",
+          },
+          limit: {
+            type: "integer",
+            description: "Max events to return (1-200). Default 50.",
+            minimum: 1,
+            maximum: 200,
+            default: 50,
+          },
+          since_iso: {
+            type: "string",
+            description:
+              "ISO 8601 timestamp; only events with published_at >= this " +
+              "are returned. Optional.",
+          },
+          payment_signature: {
+            type: "string",
+            description: "x402 v2 PAYMENT-SIGNATURE header.",
+          },
+        },
+        required: ["address"],
+        additionalProperties: false,
+      },
+      method: "POST",
+      path: "/events/by-address",
       authMode: "inline_x402",
       bodyFromArgs: true,
       stripArgs: ["payment_signature"],
