@@ -16,7 +16,7 @@ export const pulse: ServiceDef = {
   label: "XR-Pulse",
   baseUrl: "https://pulse.xrpl-utilities.io",
   manifestUrl: "https://pulse.xrpl-utilities.io/agents.json",
-  knownSchemaVersions: ["1.13.0", "1.14.0", "1.15.0", "1.16.0", "1.16.1", "1.17.0", "1.18.0", "1.19.0"],
+  knownSchemaVersions: ["1.13.0", "1.14.0", "1.15.0", "1.16.0", "1.16.1", "1.17.0", "1.18.0", "1.19.0", "1.20.0"],
   tools: [
     {
       name: "xrpl_pulse_recent_events",
@@ -48,6 +48,22 @@ export const pulse: ServiceDef = {
             description:
               "ISO 8601 timestamp; only events with published_at >= this " +
               "are returned. Optional.",
+          },
+          before_iso: {
+            type: "string",
+            description:
+              "ISO 8601 cursor for backward pagination. When set, only " +
+              "events strictly older than this timestamp are returned. " +
+              "Pair with the oldest event's published_at from a prior " +
+              "response to walk backward through history. Optional.",
+          },
+          kind: {
+            type: "string",
+            enum: ["news", "activity"],
+            description:
+              "Source-bucket filter. 'news' returns RSS sources only; " +
+              "'activity' returns whale + sentinel_signal + " +
+              "permissioned_domain rows. Omit to return the mixed feed.",
           },
           min_whale_usd: {
             type: "number",
