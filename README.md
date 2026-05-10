@@ -1,7 +1,7 @@
 # @xrpl-utilities/mcp
 
 [Model Context Protocol](https://modelcontextprotocol.io) server for the
-XRPL-Utilities™ portfolio. Exposes the read endpoints of all four
+XRPL-Utilities™ portfolio. Exposes the read endpoints of all five
 services as MCP tools so AI agents can discover and use them — either
 locally via stdio (Claude Desktop, MCP Inspector, etc.) or remotely
 via the hosted endpoint at `mcp.xrpl-utilities.io`.
@@ -10,12 +10,13 @@ via the hosted endpoint at `mcp.xrpl-utilities.io`.
 
 | Service       | What it does                                            | Tools |
 |---------------|---------------------------------------------------------|-------|
-| **XR-Sentinel**  | XRPL wallet activity-pattern classifier (0-100 score, 22-signal catalog, AI narrative) | `xrpl_sentinel_scan`, `xrpl_sentinel_scan_history` |
-| **XR-Pulse**     | Normalized XRPL signal feed — public-source news + on-chain whale activity + XLS-70/80/81 lifecycle | `xrpl_pulse_recent_events` |
+| **XR-Sentinel**  | XRPL wallet activity-pattern classifier (0-100 score, 28-signal catalog incl. account-genesis chain + provenance flags, AI narrative) | `xrpl_sentinel_scan`, `xrpl_sentinel_scan_history` |
+| **XR-Pulse**     | Normalized XRPL signal feed — public-source news + on-chain whale activity + XLS-70/80/81 lifecycle + RWA mint/burn flow + AMM-of-RWA pool snapshots | `xrpl_pulse_recent_events` |
 | **XR-Telemetry** | XRPL macro snapshot — supply, liquidity, AMM, Active Float, Burst Math utility floor | `xrpl_telemetry_snapshot`, `xrpl_telemetry_get_quote`, `xrpl_telemetry_get_status`, `xrpl_telemetry_get_results` |
 | **XR-Trust**     | Directory + drill-down for XRPL permissioned-asset stack (XLS-70/80/81 + XLS-40 DID) | `xrpl_trust_list_domains`, `xrpl_trust_get_domain`, `xrpl_trust_credential_issuers`, `xrpl_trust_recent_events` |
+| **XR-Vault**     | Real-world asset tracker for XRPL — per-issuer mint/burn flow, daily circulating snapshots, AMM-of-RWA pool exposure across tokenized treasuries, stablecoins, commercial paper, MMFs, and energy commodities | `xrpl_vault_scan` |
 
-11 tools total, all read-only. Every paid call is settled via x402 v2
+12 tools total, all read-only. Every paid call is settled via x402 v2
 on the XRPL mainnet through the t54 facilitator.
 
 ## Auth model
@@ -55,7 +56,7 @@ Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_
 }
 ```
 
-Restart Claude Desktop. The 11 tools should appear with the prefix
+Restart Claude Desktop. The 12 tools should appear with the prefix
 `xrpl_`. Ask Claude to "scan the wallet rXXX with XR-Sentinel" or
 "list permissioned domains on XRPL" and the tool calls flow through.
 

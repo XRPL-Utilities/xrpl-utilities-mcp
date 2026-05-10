@@ -70,7 +70,7 @@ never collide with other MCP servers a user has connected.
 
 Add to `~/Library/Application Support/Claude/claude_desktop_config.json`
 (macOS) or the equivalent on your platform, then restart Claude Desktop.
-The 11 tools should appear with the `xrpl_` prefix.
+The 12 tools should appear with the `xrpl_` prefix.
 
 ## Connect remotely (any MCP client)
 
