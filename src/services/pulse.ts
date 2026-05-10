@@ -16,23 +16,29 @@ export const pulse: ServiceDef = {
   label: "XR-Pulse",
   baseUrl: "https://pulse.xrpl-utilities.io",
   manifestUrl: "https://pulse.xrpl-utilities.io/agents.json",
-  knownSchemaVersions: ["1.13.0", "1.14.0", "1.15.0", "1.16.0", "1.16.1", "1.17.0", "1.18.0", "1.19.0", "1.20.0"],
+  knownSchemaVersions: ["1.13.0", "1.14.0", "1.15.0", "1.16.0", "1.16.1", "1.17.0", "1.18.0", "1.19.0", "1.20.0", "1.21.0"],
   tools: [
     {
       name: "xrpl_pulse_recent_events",
       description:
         "Return the most-recent normalized XRPL signal events newest-first. " +
-        "Mixes four streams: public-source news (regulatory press + " +
+        "Mixes six streams: public-source news (regulatory press + " +
         "central banks + crypto media filtered for XRP/RLUSD/XRPL/Ripple), " +
         "on-chain whale activity (every Payment above the storage " +
         "threshold), XLS-70/80/81 permissioned-domain lifecycle events " +
-        "sourced from XR-Trust, and Sentinel state-change signals " +
+        "sourced from XR-Trust, Sentinel state-change signals " +
         "(activity-level transitions + first-fire of " +
         "INSTITUTIONAL_SCALE_FLOW / DORMANT_REAWAKENING / " +
-        "SCORE_TRAJECTORY_BOT_ONBOARDING). Each event carries title, " +
-        "brief, published_at, source_appearances[], correlation (news " +
-        "only), active_utility (per-source canonical shape), and " +
-        "target_addresses[]. Costs $0.10 USD per call paid via XRPL x402.",
+        "SCORE_TRAJECTORY_BOT_ONBOARDING), RWA issuer per-mint/per-burn " +
+        "flow (Ondo OUSG, Schuman EUROP, Braza USDB + BBRL, SG-FORGE " +
+        "EURCV, Guggenheim DCP, Justoken JMWH, OpenEden TBL, RLUSD, " +
+        "AUDD, Archax abrdn MMF), and RWA issuer daily aggregate " +
+        "snapshots (obligations + trustline-count deltas per UTC day, " +
+        "with treasury-balance subtraction for OpenEden TBL). Each event " +
+        "carries title, brief, published_at, source_appearances[], " +
+        "correlation (news only), active_utility (per-source canonical " +
+        "shape), and target_addresses[]. Costs $0.10 USD per call paid " +
+        "via XRPL x402.",
       inputSchema: {
         type: "object",
         properties: {
