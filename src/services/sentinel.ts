@@ -23,7 +23,7 @@ export const sentinel: ServiceDef = {
         "Classify an XRPL wallet by its on-chain activity pattern. Returns " +
         "activity_score (0-100, higher = more automated/service-like), " +
         "activity_level (Low/Medium/High/Dormant/Unknown), confidence, " +
-        "signals[] from a 23-entry behavioral catalog, top_counterparties[] " +
+        "signals[] from a 24-entry behavioral catalog, top_counterparties[] " +
         "with XRPScan labels, an AI-generated reasoning narrative, and a " +
         "_delta block when prior recorded scans exist. Costs $0.10 USD per " +
         "call paid via XRPL x402 (XRP or RLUSD). Pass payment_signature " +
