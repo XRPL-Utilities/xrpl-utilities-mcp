@@ -16,7 +16,7 @@ export const pulse: ServiceDef = {
   label: "XR-Pulse",
   baseUrl: "https://pulse.xrpl-utilities.io",
   manifestUrl: "https://pulse.xrpl-utilities.io/agents.json",
-  knownSchemaVersions: ["1.13.0", "1.14.0", "1.15.0", "1.16.0", "1.16.1", "1.17.0", "1.18.0", "1.19.0", "1.20.0", "1.21.0", "1.21.1", "1.21.2", "1.21.3", "1.22.0"],
+  knownSchemaVersions: ["1.13.0", "1.14.0", "1.15.0", "1.16.0", "1.16.1", "1.17.0", "1.18.0", "1.19.0", "1.20.0", "1.21.0", "1.21.1", "1.21.2", "1.21.3", "1.22.0", "1.22.1"],
   tools: [
     {
       name: "xrpl_pulse_recent_events",
