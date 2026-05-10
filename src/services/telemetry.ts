@@ -25,7 +25,7 @@ export const telemetry: ServiceDef = {
   label: "XR-Telemetry",
   baseUrl: "https://telemetry.xrpl-utilities.io",
   manifestUrl: "https://telemetry.xrpl-utilities.io/agents.json",
-  knownSchemaVersions: ["1.2.0", "1.3.0", "1.4.0", "1.4.1", "1.5.0"],
+  knownSchemaVersions: ["1.2.0", "1.3.0", "1.4.0", "1.4.1", "1.5.0", "1.6.0"],
   tools: [
     {
       name: "xrpl_telemetry_snapshot",
