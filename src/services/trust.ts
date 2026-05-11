@@ -15,7 +15,7 @@ export const trust: ServiceDef = {
   label: "XR-Trust",
   baseUrl: "https://trust.xrpl-utilities.io",
   manifestUrl: "https://trust.xrpl-utilities.io/agents.json",
-  knownSchemaVersions: ["2026-13", "2026-14", "2026-15", "2026-16", "2026-17", "2026-18"],
+  knownSchemaVersions: ["2026-13", "2026-14", "2026-15", "2026-16", "2026-17", "2026-18", "2026-19"],
   tools: [
     {
       name: "xrpl_trust_list_domains",
