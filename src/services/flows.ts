@@ -15,8 +15,48 @@ export const flows: ServiceDef = {
   label: "XR-Flows",
   baseUrl: "https://flows.xrpl-utilities.io",
   manifestUrl: "https://flows.xrpl-utilities.io/agents.json",
-  knownSchemaVersions: ["1.0.0", "1.1.0", "1.2.0", "1.3.0", "1.4.0"],
+  knownSchemaVersions: ["1.0.0", "1.1.0", "1.2.0", "1.3.0", "1.4.0", "1.5.0"],
   tools: [
+    {
+      name: "xrpl_flows_scan",
+      description:
+        "Per-ETF deep dive for any of the six US-listed spot XRP ETFs " +
+        "(Bitwise XRP, Canary XRPC, Franklin Templeton XRPZ, Grayscale " +
+        "GXRP, 21Shares TOXR, REX-Osprey XRPR). Returns the ticker's " +
+        "registry metadata (launch date, expense ratio, source URL, " +
+        "asset class, any operator caveat), latest reading (current " +
+        "AUM, xrp_held when available, NAV, source lineage), full " +
+        "accruing daily history with per-day AUM and source labels, " +
+        "and the latest XRPL exchange-flow delta row from XR-Pulse " +
+        "as the on-chain side of the correlation. An inline re-scrape " +
+        "fires before the response is built so the latest_reading is " +
+        "current-as-of-call, not as-of-last-hourly-loop. $0.10 USD " +
+        "per call paid via x402 v2 (XRPL `exact` scheme, t54 " +
+        "facilitator; XRP and RLUSD both accepted).",
+      inputSchema: {
+        type: "object",
+        properties: {
+          ticker: {
+            type: "string",
+            description:
+              "ETF ticker (case-insensitive). One of XRP, XRPC, XRPZ, " +
+              "GXRP, TOXR, XRPR. Returns 404 when the ticker is not " +
+              "in the operator-curated registry.",
+          },
+          payment_signature: {
+            type: "string",
+            description: "x402 v2 PAYMENT-SIGNATURE header.",
+          },
+        },
+        required: ["ticker"],
+        additionalProperties: false,
+      },
+      method: "POST",
+      path: "/scan",
+      authMode: "inline_x402",
+      bodyFromArgs: true,
+      stripArgs: ["payment_signature"],
+    },
     {
       name: "xrpl_flows_correlation",
       description:
