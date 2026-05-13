@@ -82,8 +82,17 @@ export function buildServer(opts: DispatchOptions = {}): Server {
     resources,
   }));
 
+  // Allow-list of registered resource URIs. ReadResource must reject any
+  // URI not in this set so a malicious caller can't turn the hosted MCP
+  // endpoint into an SSRF proxy (cloud-metadata fetch, internal-network
+  // probe, arbitrary outbound HTTP from the Railway egress IP).
+  const allowedResourceUris = new Set(resources.map((r) => r.uri));
+
   server.setRequestHandler(ReadResourceRequestSchema, async (req) => {
     const uri = req.params.uri;
+    if (!allowedResourceUris.has(uri)) {
+      throw new Error(`unknown resource: ${uri}`);
+    }
     const ctl = new AbortController();
     const tId = setTimeout(() => ctl.abort(), 10_000);
     try {
