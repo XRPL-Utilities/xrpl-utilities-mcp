@@ -15,7 +15,7 @@ export const sentinel: ServiceDef = {
   label: "XR-Sentinel",
   baseUrl: "https://sentinel.xrpl-utilities.io",
   manifestUrl: "https://sentinel.xrpl-utilities.io/agents.json",
-  knownSchemaVersions: ["2026-09", "2.8.0", "2.9.0", "2.10.0", "2.11.0", "2.12.0", "2.13.0", "2.14.0", "2.15.0", "2.16.0", "2.17.0", "2.18.0", "2.19.0", "2.19.1", "2.19.2", "2.19.3"],
+  knownSchemaVersions: ["2026-09", "2.8.0", "2.9.0", "2.10.0", "2.11.0", "2.12.0", "2.13.0", "2.14.0", "2.15.0", "2.16.0", "2.17.0", "2.18.0", "2.19.0", "2.19.1", "2.19.2", "2.19.3", "2.20.0"],
   tools: [
     {
       name: "xrpl_sentinel_scan",
