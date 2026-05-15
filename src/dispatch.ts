@@ -30,8 +30,22 @@
  * a paid agent API into a free one.
  */
 
+import { timingSafeEqual } from "node:crypto";
+
 import { findToolOwner } from "./services/index.js";
 import { SERVER_VERSION } from "./version.js";
+
+
+function timingSafeStringEqual(a: string, b: string): boolean {
+  // Length-prefix to avoid the timingSafeEqual length-mismatch throw.
+  // The length check itself is a timing oracle of 1 bit (caller can
+  // learn the secret length); acceptable trade-off matching how
+  // hmac.compare_digest works on the Python side.
+  const ab = Buffer.from(a);
+  const bb = Buffer.from(b);
+  if (ab.length !== bb.length) return false;
+  return timingSafeEqual(ab, bb);
+}
 
 export interface DispatchOptions {
   /**
@@ -110,7 +124,7 @@ export async function dispatchTool(
   if (tool.authMode === "inline_x402") {
     if (callerPaymentSig) {
       headers["PAYMENT-SIGNATURE"] = callerPaymentSig;
-    } else if (callerBypassKey && opts.bypassKey && callerBypassKey === opts.bypassKey) {
+    } else if (callerBypassKey && opts.bypassKey && timingSafeStringEqual(callerBypassKey, opts.bypassKey)) {
       // Operator-issued bypass. Forward as the dev-bypass header that
       // the underlying services accept.
       headers["PAYMENT-SIGNATURE"] = callerBypassKey;
