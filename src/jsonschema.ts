@@ -17,4 +17,6 @@ export interface JSONSchema7 {
   additionalProperties?: boolean | JSONSchema7;
   default?: unknown;
   examples?: unknown[];
+  minItems?: number;
+  maxItems?: number;
 }

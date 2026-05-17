@@ -1,6 +1,6 @@
 {
   "name": "@xrpl-utilities/mcp",
-  "version": "0.2.51",
+  "version": "0.2.52",
   "description": "Model Context Protocol server for the XRPL-Utilities portfolio: Sentinel (wallet classifier), Pulse (signal feed), Telemetry (supply + utility floor), Trust (XLS-70/80/81 directory), Vault (RWA tracker), and Flows (ETF AUM \u2194 XRPL flow correlation). Exposes each service's read endpoints as MCP tools so AI agents can discover and use them via stdio (Claude Desktop) or HTTP/SSE (hosted at mcp.xrpl-utilities.io). Stateless passthrough \u2014 caller provides their own x402 payment header.",
   "license": "MIT",
   "type": "module",
@@ -17,7 +17,6 @@
     "start:stdio": "node dist/index.js --transport stdio",
     "start:http": "node dist/index.js --transport http",
     "dev": "tsc --watch",
-    "test": "node --test dist/tests/*.test.js",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {

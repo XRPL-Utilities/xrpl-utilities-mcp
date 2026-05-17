@@ -140,5 +140,73 @@ export const pulse: ServiceDef = {
       bodyFromArgs: true,
       stripArgs: ["payment_signature"],
     },
+    {
+      name: "xrpl_pulse_stream_purchase",
+      description:
+        "Buy a time-boxed XR-Pulse live WebSocket subscription. Returns " +
+        "a stream_token (HS256 JWT) plus a ws_url. Open the WebSocket " +
+        "and pass the token as the ?token= query parameter; events are " +
+        "pushed as they fire, with server-side filtering by source / " +
+        "signal / min USD value bound into the token at purchase time. " +
+        "Tiers: 1h ~$0.50, 6h ~$2.50, 24h ~$7.50 (XRP or RLUSD via " +
+        "x402). Reconnect with the same token until expires_at_unix; " +
+        "no event replay across reconnects (use xrpl_pulse_recent_events " +
+        "to catch up history). The WebSocket itself is not exposed as " +
+        "an MCP tool (MCP is request/response) — agents take the token " +
+        "and open the WebSocket directly. v2 of this surface will swap " +
+        "the time-boxed billing for native XRPL Payment Channels with " +
+        "per-message claims.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          duration: {
+            type: "string",
+            enum: ["1h", "6h", "24h"],
+            description: "Subscription window length. Default 1h.",
+            default: "1h",
+          },
+          min_usd: {
+            type: "number",
+            description:
+              "Optional server-side filter: drop whale-style events " +
+              "whose active_utility.usd_value is below this floor. " +
+              "Bound into the JWT — change filters means buying a new " +
+              "subscription.",
+            minimum: 0,
+          },
+          sources: {
+            type: "array",
+            items: { type: "string" },
+            description:
+              "Optional source allowlist (whale_xrpl, sentinel_signal, " +
+              "permissioned_domain_lifecycle, rwa_issuer_flow, " +
+              "rwa_issuer_daily, rwa_amm_pool_state, plus any news " +
+              "source key). Omit to receive every source.",
+            maxItems: 32,
+          },
+          signals: {
+            type: "array",
+            items: { type: "string" },
+            description:
+              "Optional signal allowlist (whale_transfer, " +
+              "INSTITUTIONAL_SCALE_FLOW, issuer_deepfreeze, " +
+              "token_escrow_event, permissioned_dex_event, etc.). " +
+              "Filters on active_utility.signal (whale-style) or " +
+              "active_utility.signals[].signal (news-style).",
+            maxItems: 32,
+          },
+          payment_signature: {
+            type: "string",
+            description: "x402 v2 PAYMENT-SIGNATURE header.",
+          },
+        },
+        additionalProperties: false,
+      },
+      method: "POST",
+      path: "/stream/purchase",
+      authMode: "inline_x402",
+      bodyFromArgs: true,
+      stripArgs: ["payment_signature"],
+    },
   ],
 };
