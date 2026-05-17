@@ -15,7 +15,7 @@ export const flows: ServiceDef = {
   label: "XR-Flows",
   baseUrl: "https://flows.xrpl-utilities.io",
   manifestUrl: "https://flows.xrpl-utilities.io/agents.json",
-  knownSchemaVersions: ["1.0.0", "1.1.0", "1.2.0", "1.3.0", "1.4.0", "1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0", "1.14.0", "1.15.0", "1.16.0", "1.16.1", "1.17.0", "1.18.0", "1.19.0", "1.19.1"],
+  knownSchemaVersions: ["1.0.0", "1.1.0", "1.2.0", "1.3.0", "1.4.0", "1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0", "1.13.0", "1.14.0", "1.15.0", "1.16.0", "1.16.1", "1.17.0", "1.18.0", "1.19.0", "1.19.1", "1.20.0"],
   tools: [
     {
       name: "xrpl_flows_scan",
@@ -85,6 +85,41 @@ export const flows: ServiceDef = {
       },
       method: "GET",
       path: "/stats/correlation",
+      authMode: "free",
+    },
+    {
+      name: "xrpl_flows_cross_border_flow",
+      description:
+        "XRPL institutional cross-border settlement edges: country-pair " +
+        "flow aggregates over a configurable window. A Payment counts " +
+        "as a cross-border edge only when BOTH sender and receiver " +
+        "XRPScan labels resolve to operator-curated jurisdictions AND " +
+        "those countries differ. Returns per-country inbound/outbound/net " +
+        "USD plus top corridors plus an honest coverage block. Labeled " +
+        "wallets only - the institutional/exchange/issuer layer, not " +
+        "retail. Free; aggregates of public on-chain data.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          window_days: {
+            type: "integer",
+            minimum: 1,
+            maximum: 365,
+            default: 30,
+            description: "Trailing window in UTC days.",
+          },
+          top_corridors: {
+            type: "integer",
+            minimum: 1,
+            maximum: 200,
+            default: 20,
+            description: "Cap on the top_corridors[] list.",
+          },
+        },
+        additionalProperties: false,
+      },
+      method: "GET",
+      path: "/stats/cross-border-flow",
       authMode: "free",
     },
     {
