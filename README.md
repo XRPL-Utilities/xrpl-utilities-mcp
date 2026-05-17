@@ -1,8 +1,8 @@
 # @xrpl-utilities/mcp
 
 [Model Context Protocol](https://modelcontextprotocol.io) server for the
-XRPL-Utilities™ portfolio. Exposes the read endpoints of all five
-services as MCP tools so AI agents can discover and use them — either
+XRPL-Utilities™ portfolio. Exposes the read endpoints of all six
+services as MCP tools so AI agents can discover and use them, either
 locally via stdio (Claude Desktop, MCP Inspector, etc.) or remotely
 via the hosted endpoint at `mcp.xrpl-utilities.io`.
 
@@ -10,13 +10,14 @@ via the hosted endpoint at `mcp.xrpl-utilities.io`.
 
 | Service       | What it does                                            | Tools |
 |---------------|---------------------------------------------------------|-------|
-| **XR-Sentinel**  | XRPL wallet activity-pattern classifier (0-100 score, 28-signal catalog incl. account-genesis chain + provenance flags, AI narrative) | `xrpl_sentinel_scan`, `xrpl_sentinel_scan_history` |
-| **XR-Pulse**     | Normalized XRPL signal feed — public-source news + on-chain whale activity + XLS-70/80/81 lifecycle + RWA mint/burn flow + AMM-of-RWA pool snapshots | `xrpl_pulse_recent_events` |
-| **XR-Telemetry** | XRPL macro snapshot — supply, liquidity, AMM, Active Float, Burst Math utility floor | `xrpl_telemetry_snapshot`, `xrpl_telemetry_get_quote`, `xrpl_telemetry_get_status`, `xrpl_telemetry_get_results` |
+| **XR-Sentinel**  | XRPL wallet activity-pattern classifier (0-100 score, 35-signal catalog including account-genesis chain + provenance flags + AI narrative) | `xrpl_sentinel_scan`, `xrpl_sentinel_scan_history` |
+| **XR-Pulse**     | Normalized XRPL signal feed: public-source news, on-chain whale activity, XLS-70/80/81 lifecycle, RWA mint/burn flow, AMM-of-RWA pool snapshots. Also streamable live via `POST /stream/purchase` + WebSocket (1h/6h/24h tiers) directly on the backend; MCP exposes the snapshot endpoints here. | `xrpl_pulse_recent_events`, `xrpl_pulse_events_by_address` |
+| **XR-Telemetry** | XRPL macro snapshot: supply, liquidity, AMM, Active Float, Burst Math utility floor | `xrpl_telemetry_snapshot`, `xrpl_telemetry_get_quote`, `xrpl_telemetry_get_status`, `xrpl_telemetry_get_results` |
 | **XR-Trust**     | Directory + drill-down for XRPL permissioned-asset stack (XLS-70/80/81 + XLS-40 DID) | `xrpl_trust_list_domains`, `xrpl_trust_get_domain`, `xrpl_trust_credential_issuers`, `xrpl_trust_recent_events` |
-| **XR-Vault**     | Real-world asset tracker for XRPL — per-issuer mint/burn flow, daily circulating snapshots, AMM-of-RWA pool exposure across tokenized treasuries, stablecoins, commercial paper, MMFs, and energy commodities | `xrpl_vault_scan` |
+| **XR-Vault**     | Real-world asset tracker for XRPL: per-issuer mint/burn flow, daily circulating snapshots, AMM-of-RWA pool exposure across tokenized treasuries, stablecoins, commercial paper, MMFs, and energy commodities | `xrpl_vault_scan` |
+| **XR-Flows**     | ETF AUM vs XRPL exchange-flow correlation across every US-listed XRP-exposure ETF (spot + indirect-basket tiers), including SEC EDGAR filing list and launch-window flow analysis | `xrpl_flows_correlation`, `xrpl_flows_launch_impact`, `xrpl_flows_scan` |
 
-12 tools total, all read-only. Every paid call is settled via x402 v2
+16 tools total, all read-only. Every paid call is settled via x402 v2
 on the XRPL mainnet through the t54 facilitator.
 
 ## Auth model
