@@ -28,7 +28,7 @@ Agent-payable XRPL data: wallet activity classifier, normalized signal feed, sup
 ## Long description (1-3 paragraphs, used on the detail page)
 
 ```
-MCP server for the XRPL-Utilities portfolio. 17 tools across six services:
+MCP server for the XRPL-Utilities portfolio. 18 tools across six services:
 
   • XR-Sentinel - classify any XRPL wallet by its on-chain activity pattern.
     Returns a 0-100 activity_score, a Low/Medium/High/Dormant level,
