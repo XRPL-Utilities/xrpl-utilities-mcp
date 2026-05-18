@@ -16,7 +16,7 @@ export const pulse: ServiceDef = {
   label: "XR-Pulse",
   baseUrl: "https://pulse.xrpl-utilities.io",
   manifestUrl: "https://pulse.xrpl-utilities.io/agents.json",
-  knownSchemaVersions: ["1.13.0", "1.14.0", "1.15.0", "1.16.0", "1.16.1", "1.17.0", "1.18.0", "1.19.0", "1.20.0", "1.21.0", "1.21.1", "1.21.2", "1.21.3", "1.22.0", "1.22.1", "1.23.0", "1.24.0", "1.25.0", "1.25.1", "1.25.2", "1.26.0", "1.27.0", "1.28.0", "1.28.1", "1.29.0", "1.30.0", "1.31.0", "1.32.0", "1.32.1", "1.32.2", "1.32.3", "1.33.0", "1.34.0", "1.34.1", "1.34.2", "1.35.0", "1.36.0", "1.37.0", "1.38.0", "1.39.0", "1.39.1", "1.39.2", "1.39.3", "1.40.0", "1.40.1", "1.41.0", "1.41.1", "1.42.0", "1.43.0", "1.44.0"],
+  knownSchemaVersions: ["1.13.0", "1.14.0", "1.15.0", "1.16.0", "1.16.1", "1.17.0", "1.18.0", "1.19.0", "1.20.0", "1.21.0", "1.21.1", "1.21.2", "1.21.3", "1.22.0", "1.22.1", "1.23.0", "1.24.0", "1.25.0", "1.25.1", "1.25.2", "1.26.0", "1.27.0", "1.28.0", "1.28.1", "1.29.0", "1.30.0", "1.31.0", "1.32.0", "1.32.1", "1.32.2", "1.32.3", "1.33.0", "1.34.0", "1.34.1", "1.34.2", "1.35.0", "1.36.0", "1.37.0", "1.38.0", "1.39.0", "1.39.1", "1.39.2", "1.39.3", "1.40.0", "1.40.1", "1.41.0", "1.41.1", "1.42.0", "1.43.0", "1.44.0", "1.45.0"],
   tools: [
     {
       name: "xrpl_pulse_recent_events",
@@ -38,7 +38,7 @@ export const pulse: ServiceDef = {
         "carries title, brief, published_at, source_appearances[], " +
         "correlation (news only), active_utility (per-source canonical " +
         "shape), and target_addresses[]. Costs $0.10 USD per call paid " +
-        "via XRPL x402.",
+        "via x402 (XRP/RLUSD on XRPL or USDC on Base).",
       inputSchema: {
         type: "object",
         properties: {
@@ -105,7 +105,7 @@ export const pulse: ServiceDef = {
         "'what does this wallet look like AND what has it actually been " +
         "doing on the public feed?'. No title-similarity clustering on " +
         "this endpoint - events about the same wallet aren't necessarily " +
-        "about the same story. Costs $0.10 USD per call paid via XRPL x402.",
+        "about the same story. Costs $0.10 USD per call paid via x402 (XRP/RLUSD on XRPL or USDC on Base).",
       inputSchema: {
         type: "object",
         properties: {
@@ -148,7 +148,7 @@ export const pulse: ServiceDef = {
         "and pass the token as the ?token= query parameter; events are " +
         "pushed as they fire, with server-side filtering by source / " +
         "signal / min USD value bound into the token at purchase time. " +
-        "Tiers: 1h ~$0.50, 6h ~$2.50, 24h ~$7.50 (XRP or RLUSD via " +
+        "Tiers: 1h ~$0.50, 6h ~$2.50, 24h ~$7.50 (XRP/RLUSD on XRPL or USDC on Base via " +
         "x402). Reconnect with the same token until expires_at_unix; " +
         "no event replay across reconnects (use xrpl_pulse_recent_events " +
         "to catch up history). The WebSocket itself is not exposed as " +

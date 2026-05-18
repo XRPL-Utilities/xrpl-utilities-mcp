@@ -14,7 +14,7 @@ export const vault: ServiceDef = {
   label: "XR-Vault",
   baseUrl: "https://vault.xrpl-utilities.io",
   manifestUrl: "https://vault.xrpl-utilities.io/agents.json",
-  knownSchemaVersions: ["1.0.0", "1.0.1", "1.0.2", "1.1.0", "1.2.0", "1.3.0", "1.4.0", "1.5.0", "1.5.1", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.9.1"],
+  knownSchemaVersions: ["1.0.0", "1.0.1", "1.0.2", "1.1.0", "1.2.0", "1.3.0", "1.4.0", "1.5.0", "1.5.1", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.9.1", "1.10.0"],
   tools: [
     {
       name: "xrpl_vault_scan",
@@ -31,7 +31,8 @@ export const vault: ServiceDef = {
         "DCP (Zeconomy SPV), Justoken JMWH (in MWh, not USD), OpenEden " +
         "TBL, Ripple RLUSD, AUDD, plus Archax abrdn USD Liquidity Fund as " +
         "rails-only for first-mint capture. $0.10 USD per call paid via " +
-        "x402 v2 (XRP or RLUSD via t54 facilitator).",
+        "x402 v2 (XRP/RLUSD on XRPL via t54 facilitator, or USDC on Base via " +
+        "Coinbase facilitator).",
       inputSchema: {
         type: "object",
         properties: {
