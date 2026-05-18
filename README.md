@@ -32,9 +32,11 @@ returned by an unauthenticated probe. The server forwards it as the
 `PAYMENT-SIGNATURE` header on the underlying call.
 
 If you don't supply `payment_signature`, the underlying service
-returns its real `402 Payment Required` challenge with the XRP +
-RLUSD requirements. The MCP server passes that back to the LLM as
-a structured error so it can sign and retry.
+returns its real `402 Payment Required` challenge listing three
+payment options: XRP and RLUSD on XRPL via the t54 facilitator, or
+USDC on Base mainnet via the Coinbase x402 facilitator. The MCP
+server passes that back to the LLM as a structured error so it can
+sign and retry against whichever rail its wallet supports.
 
 Operators can set `MCP_BYPASS_KEY` on the server to enable an opt-in
 bypass for friendlies / demos. The caller passes the matching key as
@@ -70,14 +72,20 @@ tool list, same auth model.
 
 To avoid 402 challenges on every call, your client needs to:
 
-1. Hold a funded XRPL wallet (XRP + optional RLUSD trustline).
-2. On each paid tool call, sign a Payment matching one of the
-   `accepts` entries from a prior probe.
-3. Pass the base64-JSON-encoded header as `payment_signature`.
+1. Hold a wallet on at least one of the supported rails:
+   an XRPL wallet with XRP (and optional RLUSD trustline) OR
+   an EVM wallet with USDC on Base mainnet.
+2. On each paid tool call, sign a payment matching one of the
+   `accepts` entries from a prior probe. XRPL rails take an
+   XRPL Payment; the Base rail takes an EIP-3009
+   `transferWithAuthorization`.
+3. Pass the base64-JSON-encoded envelope as `payment_signature`.
 
-The Python reference implementation is
-[`x402-xrpl`](https://pypi.org/project/x402-xrpl/) — useful as a
-template even if you're using a different language.
+Reference implementations:
+[`x402-xrpl`](https://pypi.org/project/x402-xrpl/) covers the
+XRPL rails. The official [`x402`](https://pypi.org/project/x402/)
+package (with `[evm]` extras) covers the Base USDC rail. Both are
+useful as templates in any language.
 
 ## Local dev
 
