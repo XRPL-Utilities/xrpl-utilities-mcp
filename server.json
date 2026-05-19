@@ -8,12 +8,12 @@
     "source": "github"
   },
   "websiteUrl": "https://mcp.xrpl-utilities.io",
-  "version": "0.2.74",
+  "version": "0.2.75",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "@xrpl-utilities/mcp",
-      "version": "0.2.74",
+      "version": "0.2.75",
       "transport": {
         "type": "stdio"
       }
