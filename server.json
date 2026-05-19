@@ -1,0 +1,22 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.XRPL-Utilities/mcp",
+  "title": "XRPL-Utilities",
+  "description": "XRPL data tools for AI agents: wallet classifier, signals, RWA tracker, ETF flows. Pay via x402.",
+  "repository": {
+    "url": "https://github.com/XRPL-Utilities/xrpl-utilities-mcp",
+    "source": "github"
+  },
+  "websiteUrl": "https://mcp.xrpl-utilities.io",
+  "version": "0.2.71",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@xrpl-utilities/mcp",
+      "version": "0.2.71",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

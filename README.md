@@ -101,8 +101,9 @@ tool definitions interactively.
 ## Releases
 
 Releases are cut by tag push. The `Release` workflow builds, validates
-that `package.json` version matches the tag, then publishes to npm
-with sigstore provenance.
+that `package.json` version matches the tag, publishes to npm with
+sigstore provenance, then mirrors the same version to the official
+MCP Registry via GitHub OIDC (no extra secrets needed).
 
 ```bash
 npm version patch       # or minor / major
@@ -112,7 +113,9 @@ git push --follow-tags  # pushes commit + tag, CI does the rest
 The published artifact appears at
 [npmjs.com/package/@xrpl-utilities/mcp](https://www.npmjs.com/package/@xrpl-utilities/mcp)
 within ~90 seconds. Provenance attestation is visible on the package
-page as a green check.
+page as a green check. The MCP Registry entry lives at
+[registry.modelcontextprotocol.io](https://registry.modelcontextprotocol.io/v0/servers?search=io.github.XRPL-Utilities/mcp)
+under the reverse-DNS name `io.github.XRPL-Utilities/mcp`.
 
 ## License
 
