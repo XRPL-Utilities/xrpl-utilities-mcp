@@ -16,7 +16,7 @@ export const pulse: ServiceDef = {
   label: "XR-Pulse",
   baseUrl: "https://pulse.xrpl-utilities.io",
   manifestUrl: "https://pulse.xrpl-utilities.io/agents.json",
-  knownSchemaVersions: ["1.13.0", "1.14.0", "1.15.0", "1.16.0", "1.16.1", "1.17.0", "1.18.0", "1.19.0", "1.20.0", "1.21.0", "1.21.1", "1.21.2", "1.21.3", "1.22.0", "1.22.1", "1.23.0", "1.24.0", "1.25.0", "1.25.1", "1.25.2", "1.26.0", "1.27.0", "1.28.0", "1.28.1", "1.29.0", "1.30.0", "1.31.0", "1.32.0", "1.32.1", "1.32.2", "1.32.3", "1.33.0", "1.34.0", "1.34.1", "1.34.2", "1.35.0", "1.36.0", "1.37.0", "1.38.0", "1.39.0", "1.39.1", "1.39.2", "1.39.3", "1.40.0", "1.40.1", "1.41.0", "1.41.1", "1.42.0", "1.43.0", "1.44.0", "1.45.0", "1.46.0", "1.46.1", "1.46.2", "1.47.0", "1.48.0"],
+  knownSchemaVersions: ["1.13.0", "1.14.0", "1.15.0", "1.16.0", "1.16.1", "1.17.0", "1.18.0", "1.19.0", "1.20.0", "1.21.0", "1.21.1", "1.21.2", "1.21.3", "1.22.0", "1.22.1", "1.23.0", "1.24.0", "1.25.0", "1.25.1", "1.25.2", "1.26.0", "1.27.0", "1.28.0", "1.28.1", "1.29.0", "1.30.0", "1.31.0", "1.32.0", "1.32.1", "1.32.2", "1.32.3", "1.33.0", "1.34.0", "1.34.1", "1.34.2", "1.35.0", "1.36.0", "1.37.0", "1.38.0", "1.39.0", "1.39.1", "1.39.2", "1.39.3", "1.40.0", "1.40.1", "1.41.0", "1.41.1", "1.42.0", "1.43.0", "1.44.0", "1.45.0", "1.46.0", "1.46.1", "1.46.2", "1.47.0", "1.48.0", "1.49.0"],
   tools: [
     {
       name: "xrpl_pulse_recent_events",
@@ -207,6 +207,41 @@ export const pulse: ServiceDef = {
       authMode: "inline_x402",
       bodyFromArgs: true,
       stripArgs: ["payment_signature"],
+    },
+    {
+      name: "xrpl_pulse_ripple_counterparties",
+      description:
+        "Anonymized view of XR-Pulse's Ripple-counterparty auto-discovery " +
+        "loop plus the relay-burst detector. The discovery loop polls a " +
+        "curated set of Ripple-controlled wallets (multi-signer treasuries, " +
+        "the RLUSD distribution wallet, and TOML-attested escrow wallets) " +
+        "for outgoing Payments to new destinations and scores each on " +
+        "seven weighted heuristics (XRP balance, RLUSD pre-approval, " +
+        "account age, multi-exchange connectivity, intake-treasury " +
+        "fingerprint, Ripple-funded-MM inflow, recency). The relay-burst " +
+        "detector flags multi-hop pure-payment chains (>=3 hops, >=$30M " +
+        "total, >=$10M per hop, within 1h) where at least one wallet is " +
+        "operator-labeled. Returns score-tier and funding-source " +
+        "distributions plus relay-burst summaries (hop_count, total_usd, " +
+        "anchor_label, news_correlation_count); specific wallet addresses " +
+        "are intentionally NOT exposed on this surface. Free, public.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          limit: {
+            type: "integer",
+            description:
+              "Max candidate rows to summarize (1-200). Default 50.",
+            minimum: 1,
+            maximum: 200,
+            default: 50,
+          },
+        },
+        additionalProperties: false,
+      },
+      method: "GET",
+      path: "/stats/ripple-counterparties",
+      authMode: "free",
     },
   ],
 };
