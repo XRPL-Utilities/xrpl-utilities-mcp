@@ -25,7 +25,7 @@ export const telemetry: ServiceDef = {
   label: "XR-Telemetry",
   baseUrl: "https://telemetry.xrpl-utilities.io",
   manifestUrl: "https://telemetry.xrpl-utilities.io/agents.json",
-  knownSchemaVersions: ["1.2.0", "1.3.0", "1.4.0", "1.4.1", "1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.11.1", "1.11.2", "1.12.0", "1.13.0", "1.14.0", "1.15.0", "1.16.0", "1.17.0", "1.18.0"],
+  knownSchemaVersions: ["1.2.0", "1.3.0", "1.4.0", "1.4.1", "1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.11.1", "1.11.2", "1.12.0", "1.13.0", "1.14.0", "1.15.0", "1.16.0", "1.17.0", "1.18.0", "1.19.0"],
   tools: [
     {
       name: "xrpl_telemetry_snapshot",
@@ -119,6 +119,72 @@ export const telemetry: ServiceDef = {
       method: "GET",
       path: "/results/{invoice_id}",
       authMode: "async_invoice",
+    },
+    {
+      name: "xrpl_telemetry_settlement_totals",
+      description:
+        "Free aggregate XRPL settlement volume rollup: USD-denominated " +
+        "Payment volume across XRP and RLUSD legs over 24h / 7d / 30d, " +
+        "annualized run rate, payment counts, coverage block describing " +
+        "the first and latest hour bucket recorded by the settlement " +
+        "walker. Walker is a continuous async loop (not a slow-task); " +
+        "see /healthz checks.settlement_walker for freshness. Bootstrapping " +
+        "flag surfaces in the settlement block during the first 7d / 30d " +
+        "post-deploy. Free, public.",
+      inputSchema: {
+        type: "object",
+        properties: {},
+        additionalProperties: false,
+      },
+      method: "GET",
+      path: "/settlement/totals",
+      authMode: "free",
+    },
+    {
+      name: "xrpl_telemetry_settlement_series",
+      description:
+        "Free time-series of XRPL settlement volume: per-hour USD volume " +
+        "stacked by currency leg (XRP at ledger-close spot, RLUSD at " +
+        "$1.00) plus payment count. Complements the rollup endpoint; use " +
+        "this for charting or change-point detection. Free, public.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          hours: {
+            type: "integer",
+            description: "Trailing hour count (1-720). Default 168 (7 days).",
+            minimum: 1,
+            maximum: 720,
+            default: 168,
+          },
+        },
+        additionalProperties: false,
+      },
+      method: "GET",
+      path: "/settlement/series",
+      authMode: "free",
+    },
+    {
+      name: "xrpl_telemetry_dex_pair_volume",
+      description:
+        "Free per-pair DEX volume rollup on XRPL: 24h, 7d, fill counts, " +
+        "volume by source (orderbook OfferCreate vs AMM), annualized run " +
+        "rate. Curated pair set: XRP/RLUSD plus secondary pools. Reads " +
+        "partial during the first week post-deploy; bootstrapping flag " +
+        "surfaces this. Free, public.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          pair: {
+            type: "string",
+            description: "Optional pair filter (e.g. 'XRP/RLUSD'). Omit for all tracked pairs.",
+          },
+        },
+        additionalProperties: false,
+      },
+      method: "GET",
+      path: "/stats/dex-pair-volume",
+      authMode: "free",
     },
   ],
 };

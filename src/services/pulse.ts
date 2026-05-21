@@ -30,11 +30,14 @@ export const pulse: ServiceDef = {
         "(activity-level transitions + first-fire of " +
         "INSTITUTIONAL_SCALE_FLOW / DORMANT_REAWAKENING / " +
         "SCORE_TRAJECTORY_BOT_ONBOARDING), RWA issuer per-mint/per-burn " +
-        "flow (Ondo OUSG, Schuman EUROP, Braza USDB + BBRL, SG-FORGE " +
-        "EURCV, Guggenheim DCP, Justoken JMWH, OpenEden TBL, RLUSD, " +
-        "AUDD, Archax abrdn MMF), and RWA issuer daily aggregate " +
-        "snapshots (obligations + trustline-count deltas per UTC day, " +
-        "with treasury-balance subtraction for OpenEden TBL). Each event " +
+        "flow (Ondo OUSG (permissioned + public), Schuman EUROP, " +
+        "Braza USDB + BBRL, SG-FORGE EURCV, Guggenheim DCP, Justoken " +
+        "JMWH, OpenEden TBL, RLUSD, AUDD, Archax abrdn MMF, Circle " +
+        "USDCAllow, Ctrl Alt DIA-L-COL1, Ctrl Alt DLD-25-24722-IAHG, " +
+        "Quantoz EURQ), and RWA issuer daily aggregate snapshots " +
+        "(obligations + trustline-count deltas per UTC day, with " +
+        "treasury-balance subtraction applied across USD-pegged issuers " +
+        "as appropriate). Each event " +
         "carries title, brief, published_at, source_appearances[], " +
         "correlation (news only), active_utility (per-source canonical " +
         "shape), and target_addresses[]. Costs $0.10 USD per call paid " +
@@ -297,6 +300,87 @@ export const pulse: ServiceDef = {
       },
       method: "GET",
       path: "/stats/cex-attribution",
+      authMode: "free",
+    },
+    {
+      name: "xrpl_pulse_network_stats",
+      description:
+        "Free XRPL network summary: total funded addresses (per the " +
+        "api.xrpl.to source), live trustline count, live offer count, " +
+        "24h active address count, and snapshot freshness. Use this as " +
+        "a baseline-state probe before paying for /events/recent or " +
+        "deciding whether activity-level signals are likely meaningful. " +
+        "Free, public.",
+      inputSchema: {
+        type: "object",
+        properties: {},
+        additionalProperties: false,
+      },
+      method: "GET",
+      path: "/stats/network",
+      authMode: "free",
+    },
+    {
+      name: "xrpl_pulse_whale_flow_24h",
+      description:
+        "Free aggregate of all whale_xrpl Payments above the storage " +
+        "threshold in the trailing 24h. Returns total USD value, total " +
+        "tx count, top sender + receiver labels (institutional " +
+        "watchlist + auto-promoted), per-currency breakdown (XRP, RLUSD, " +
+        "other IOUs). Comparable across services and days; no specific " +
+        "wallet addresses are returned. Free, public.",
+      inputSchema: {
+        type: "object",
+        properties: {},
+        additionalProperties: false,
+      },
+      method: "GET",
+      path: "/stats/whale-flow-24h",
+      authMode: "free",
+    },
+    {
+      name: "xrpl_pulse_exchange_flow_delta",
+      description:
+        "Free per-UTC-day series of net XRPL exchange flow: inbound, " +
+        "outbound, net (positive = exchanges are net-receivers of " +
+        "XRP), 24h settlement-volume USD, active-float bridge components. " +
+        "Same series XR-Flows /stats/correlation overlays with ETF AUM " +
+        "for the correlation headline. Free, public.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          days: {
+            type: "integer",
+            description: "Trailing day count (1-90). Default 30.",
+            minimum: 1,
+            maximum: 90,
+            default: 30,
+          },
+        },
+        additionalProperties: false,
+      },
+      method: "GET",
+      path: "/stats/exchange-flow-delta",
+      authMode: "free",
+    },
+    {
+      name: "xrpl_pulse_rwa_summary",
+      description:
+        "Free RWA issuer rollup: per-issuer current obligations, " +
+        "net-circulating (treasury-adjusted where applicable), trustline " +
+        "count, 24h mint and burn flow, AMM-of-RWA pool exposure. Covers " +
+        "the full operator-curated issuer set plus auto-discovered " +
+        "candidates surfaced via the rwa_issuer_discovery loop. Native " +
+        "unit-of-account; no fabricated USD valuation. Same data backing " +
+        "XR-Vault's per-issuer deep dive, surfaced here as a free " +
+        "cross-issuer view. Free, public.",
+      inputSchema: {
+        type: "object",
+        properties: {},
+        additionalProperties: false,
+      },
+      method: "GET",
+      path: "/stats/rwa-summary",
       authMode: "free",
     },
   ],

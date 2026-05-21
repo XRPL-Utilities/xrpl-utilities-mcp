@@ -57,7 +57,7 @@ export async function runHttp(port: number): Promise<void> {
     res.json({
       service: "xrpl-utilities-mcp",
       description:
-        "MCP server for the XRPL-Utilities portfolio (Sentinel, Pulse, Telemetry, Trust). Connect any MCP client to /mcp.",
+        "MCP server for the XRPL-Utilities portfolio (Sentinel, Pulse, Telemetry, Trust, Vault, Flows). Connect any MCP client to /mcp.",
       version: SERVER_VERSION,
       mcp_endpoint: "/mcp",
       manifest: "/agents.json",
@@ -84,7 +84,7 @@ export async function runHttp(port: number): Promise<void> {
     provider: "XRPL-Utilities™",
     description:
       "Model Context Protocol server exposing the XRPL-Utilities portfolio " +
-      "(Sentinel, Pulse, Telemetry, Trust) as " + ALL_TOOLS.length + " callable tools " +
+      "(Sentinel, Pulse, Telemetry, Trust, Vault, Flows) as " + ALL_TOOLS.length + " callable tools " +
       "for AI agents. Stateless passthrough proxy: callers supply their own " +
       "x402 v2 payment header per tool call. Settled inline via the t54 " +
       "facilitator on XRPL mainnet; $0.10 USD per paid call lands on the " +
@@ -128,7 +128,7 @@ export async function runHttp(port: number): Promise<void> {
       "# XRPL-Utilities MCP™",
       "",
       "Model Context Protocol server exposing the XRPL-Utilities portfolio",
-      `(Sentinel, Pulse, Telemetry, Trust) as ${ALL_TOOLS.length} callable tools for AI agents.`,
+      `(Sentinel, Pulse, Telemetry, Trust, Vault, Flows) as ${ALL_TOOLS.length} callable tools for AI agents.`,
       "Stateless passthrough proxy.",
       "Provider: XRPL-Utilities™ LLC.",
       "",
