@@ -16,7 +16,7 @@ export const pulse: ServiceDef = {
   label: "XR-Pulse",
   baseUrl: "https://pulse.xrpl-utilities.io",
   manifestUrl: "https://pulse.xrpl-utilities.io/agents.json",
-  knownSchemaVersions: ["1.13.0", "1.14.0", "1.15.0", "1.16.0", "1.16.1", "1.17.0", "1.18.0", "1.19.0", "1.20.0", "1.21.0", "1.21.1", "1.21.2", "1.21.3", "1.22.0", "1.22.1", "1.23.0", "1.24.0", "1.25.0", "1.25.1", "1.25.2", "1.26.0", "1.27.0", "1.28.0", "1.28.1", "1.29.0", "1.30.0", "1.31.0", "1.32.0", "1.32.1", "1.32.2", "1.32.3", "1.33.0", "1.34.0", "1.34.1", "1.34.2", "1.35.0", "1.36.0", "1.37.0", "1.38.0", "1.39.0", "1.39.1", "1.39.2", "1.39.3", "1.40.0", "1.40.1", "1.41.0", "1.41.1", "1.42.0", "1.43.0", "1.44.0", "1.45.0", "1.46.0", "1.46.1", "1.46.2", "1.47.0", "1.48.0", "1.49.0", "1.50.0", "1.51.0", "1.52.0", "1.53.0", "1.54.0", "1.55.0", "1.56.0", "1.57.0", "1.57.1"],
+  knownSchemaVersions: ["1.13.0", "1.14.0", "1.15.0", "1.16.0", "1.16.1", "1.17.0", "1.18.0", "1.19.0", "1.20.0", "1.21.0", "1.21.1", "1.21.2", "1.21.3", "1.22.0", "1.22.1", "1.23.0", "1.24.0", "1.25.0", "1.25.1", "1.25.2", "1.26.0", "1.27.0", "1.28.0", "1.28.1", "1.29.0", "1.30.0", "1.31.0", "1.32.0", "1.32.1", "1.32.2", "1.32.3", "1.33.0", "1.34.0", "1.34.1", "1.34.2", "1.35.0", "1.36.0", "1.37.0", "1.38.0", "1.39.0", "1.39.1", "1.39.2", "1.39.3", "1.40.0", "1.40.1", "1.41.0", "1.41.1", "1.42.0", "1.43.0", "1.44.0", "1.45.0", "1.46.0", "1.46.1", "1.46.2", "1.47.0", "1.48.0", "1.49.0", "1.50.0", "1.51.0", "1.52.0", "1.53.0", "1.54.0", "1.55.0", "1.56.0", "1.57.0", "1.57.1", "1.58.0"],
   tools: [
     {
       name: "xrpl_pulse_recent_events",
@@ -264,6 +264,39 @@ export const pulse: ServiceDef = {
       },
       method: "GET",
       path: "/stats/ripple-topology",
+      authMode: "free",
+    },
+    {
+      name: "xrpl_pulse_cex_attribution",
+      description:
+        "Anonymized view of XR-Pulse's cex_attribution_walker findings. " +
+        "The walker complements the relay-burst detector: it fires when " +
+        "an operator-labeled CEX wallet (Bitso, Binance, Coinbase, Gemini, " +
+        "Kraken, Bitstamp, OKX, Ceffu, etc.) receives a whale Payment over " +
+        "$5M and walks the chain backward up to 4 hops within a 4h window, " +
+        "looking for unlabeled intermediate wallets that the relay-burst " +
+        "detector skips because they pass through long-standing Ripple " +
+        "infrastructure that doesn't show the burst fingerprint. Each row " +
+        "is one unlabeled intermediate plus the chain it sat in (hop " +
+        "count, total USD, sanitized anchor label, sanitized terminal CEX " +
+        "label). Specific wallet addresses, intermediate addresses, and " +
+        "tx hashes are NOT exposed on this surface. Free, public.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          limit: {
+            type: "integer",
+            description:
+              "Max candidate rows to summarize (1-200). Default 50.",
+            minimum: 1,
+            maximum: 200,
+            default: 50,
+          },
+        },
+        additionalProperties: false,
+      },
+      method: "GET",
+      path: "/stats/cex-attribution",
       authMode: "free",
     },
   ],
