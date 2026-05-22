@@ -15,7 +15,7 @@ export const trust: ServiceDef = {
   label: "XR-Trust",
   baseUrl: "https://trust.xrpl-utilities.io",
   manifestUrl: "https://trust.xrpl-utilities.io/agents.json",
-  knownSchemaVersions: ["2026-13", "2026-14", "2026-15", "2026-16", "2026-17", "2026-18", "2026-19", "2026-20", "2026-21", "2026-22", "2026-23", "2026-24", "2026-25", "2026-26", "2026-27", "2026-28", "2026-29", "2026-30", "2026-31", "2026-32", "2026-33", "2026-34", "2026-35", "2026-36"],
+  knownSchemaVersions: ["2026-13", "2026-14", "2026-15", "2026-16", "2026-17", "2026-18", "2026-19", "2026-20", "2026-21", "2026-22", "2026-23", "2026-24", "2026-25", "2026-26", "2026-27", "2026-28", "2026-29", "2026-30", "2026-31", "2026-32", "2026-33", "2026-34", "2026-35", "2026-36", "2026-37"],
   tools: [
     {
       name: "xrpl_trust_list_domains",
@@ -202,6 +202,62 @@ export const trust: ServiceDef = {
       },
       method: "GET",
       path: "/permissioned-domains/operators/{owner_address}",
+      authMode: "free",
+    },
+    {
+      name: "xrpl_trust_operator_attribution",
+      description:
+        "Free auto-walked institutional attribution for one PermissionedDomain " +
+        "operator: parent funder address + XRPScan well-known label (Bitso, " +
+        "Coinbase, etc.), decoded accepted-credential types (e.g. EUROP_KYC, " +
+        "USDC_KYC), per-credentialed-subject IOU trustline issuer cross-" +
+        "reference (which stablecoin or asset is gated), and a one-sentence " +
+        "plain-English summary plus a confidence tier (high|medium|low). " +
+        "Walk fires automatically on every PermissionedDomainSet from the " +
+        "subscribe loop; backfilled on Trust startup for pre-existing " +
+        "operators. 404 if no walk recorded. Free, public.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          operator_address: {
+            type: "string",
+            description: "XRPL classic address of the PD operator (r-prefix).",
+          },
+        },
+        required: ["operator_address"],
+        additionalProperties: false,
+      },
+      method: "GET",
+      path: "/permissioned-domains/operators/{operator_address}/attribution",
+      authMode: "free",
+    },
+    {
+      name: "xrpl_trust_usage_summary",
+      description:
+        "Free ecosystem-wide aggregate of XLS-70/80 + XLS-81 PermissionedDomain " +
+        "activity over a configurable window (default 30 days, max 365). " +
+        "One row of totals across every domain on mainnet: live domain count, " +
+        "operator count, credential creates/accepts/revokes, permissioned " +
+        "offer creates/cancels, permissioned payments, AMM events, domain " +
+        "lifecycle events, count of operators with auto-walked institutional " +
+        "attribution. Ships a short narrative line. Use this to track " +
+        "institutional adoption velocity on XRPL's permissioned stack. " +
+        "Per-operator detail stays on the paid drill-down. Free, public.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          window_days: {
+            type: "integer",
+            minimum: 1,
+            maximum: 365,
+            default: 30,
+            description: "Aggregation window in days. Default 30.",
+          },
+        },
+        additionalProperties: false,
+      },
+      method: "GET",
+      path: "/permissioned-domains/usage-summary",
       authMode: "free",
     },
     {
