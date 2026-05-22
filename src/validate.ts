@@ -85,12 +85,16 @@ async function validateService(svc: ServiceDef, timeoutMs: number): Promise<Vali
   // entries like '/events?since=<event_id>&limit=...').
   const endpoints = manifest["endpoints"];
   if (endpoints && typeof endpoints === "object") {
+    // Normalize both sides: strip path params, collapse repeated slashes,
+    // drop trailing slashes. Lets a tool path with {param} match a manifest
+    // entry that keeps the param placeholder.
+    const norm = (s: string) =>
+      s.replace(/\{[^}]+\}/g, "").replace(/\/{2,}/g, "/").replace(/\/+$/, "");
     const flat = Object.values(endpoints as Record<string, unknown>)
-      .map((v) => String(v))
+      .map((v) => norm(String(v)))
       .join(" ");
     for (const tool of svc.tools) {
-      // Strip path params for the substring match.
-      const skeleton = tool.path.replace(/\{[^}]+\}/g, "").replace(/\/+$/, "");
+      const skeleton = norm(tool.path);
       if (skeleton && !flat.includes(skeleton)) {
         out.errors.push(
           `tool ${tool.name} declares path ${tool.path} but the manifest ` +
