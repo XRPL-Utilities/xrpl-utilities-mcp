@@ -20,6 +20,7 @@ export const flows: ServiceDef = {
     {
       name: "xrpl_flows_scan",
       description:
+        "Paid ($0.10 USD). " +
         "Per-ETF deep dive for any of the six US-listed spot XRP ETFs " +
         "(Bitwise XRP, Canary XRPC, Franklin Templeton XRPZ, Grayscale " +
         "GXRP, 21Shares TOXR, REX-Osprey XRPR). Returns the ticker's " +
@@ -60,6 +61,7 @@ export const flows: ServiceDef = {
     {
       name: "xrpl_flows_correlation",
       description:
+        "Free. " +
         "Daily ETF AUM and XRPL exchange-flow delta for the six US-listed " +
         "spot XRP ETFs (Bitwise XRP, Canary XRPC, Franklin XRPZ, Grayscale " +
         "GXRP, 21Shares TOXR, REX-Osprey XRPR). Returns per-ticker daily " +
@@ -90,6 +92,7 @@ export const flows: ServiceDef = {
     {
       name: "xrpl_flows_cross_border_flow",
       description:
+        "Free. " +
         "XRPL institutional cross-border settlement edges: country-pair " +
         "flow aggregates over a configurable window. A Payment counts " +
         "as a cross-border edge only when BOTH sender and receiver " +
@@ -125,6 +128,7 @@ export const flows: ServiceDef = {
     {
       name: "xrpl_flows_launch_impact",
       description:
+        "Free. " +
         "Per-ETF launch-window analysis: for each tracked spot XRP ETF, " +
         "returns its launch date and a [L-30, L+30] window summary of " +
         "XRPL exchange-flow delta + DEX volume. The post-window vs " +

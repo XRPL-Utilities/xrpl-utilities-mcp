@@ -21,6 +21,7 @@ export const pulse: ServiceDef = {
     {
       name: "xrpl_pulse_recent_events",
       description:
+        "Paid ($0.10 USD). " +
         "Return the most-recent normalized XRPL signal events newest-first. " +
         "Mixes six streams: public-source news (regulatory press + " +
         "central banks + crypto media filtered for XRP/RLUSD/XRPL/Ripple), " +
@@ -98,6 +99,7 @@ export const pulse: ServiceDef = {
     {
       name: "xrpl_pulse_events_by_address",
       description:
+        "Paid ($0.10 USD). " +
         "Return Pulse events that reference a specific XRPL classic " +
         "address, newest-first. Match strategy spans all event sources: " +
         "whale events where the address is sender or receiver, " +
@@ -146,6 +148,7 @@ export const pulse: ServiceDef = {
     {
       name: "xrpl_pulse_stream_purchase",
       description:
+        "Paid (tiered: 1h ~$0.50 / 6h ~$2.50 / 24h ~$7.50). " +
         "Buy a time-boxed XR-Pulse live WebSocket subscription. Returns " +
         "a stream_token (HS256 JWT) plus a ws_url. Open the WebSocket " +
         "and pass the token as the ?token= query parameter; events are " +
@@ -214,6 +217,7 @@ export const pulse: ServiceDef = {
     {
       name: "xrpl_pulse_ripple_counterparties",
       description:
+        "Free. " +
         "Anonymized view of XR-Pulse's Ripple-counterparty auto-discovery " +
         "loop plus the relay-burst detector. The discovery loop polls a " +
         "curated set of Ripple-controlled wallets (multi-signer treasuries, " +
@@ -249,6 +253,7 @@ export const pulse: ServiceDef = {
     {
       name: "xrpl_pulse_ripple_topology",
       description:
+        "Free. " +
         "Public-attribution map of the Ripple ecosystem on XRPL. Three " +
         "columns matching the xrpl-utilities.com/lineage/ topology view: " +
         "Source (Ripple-published or XRPScan-attested infrastructure — " +
@@ -272,6 +277,7 @@ export const pulse: ServiceDef = {
     {
       name: "xrpl_pulse_cex_attribution",
       description:
+        "Free. " +
         "Anonymized view of XR-Pulse's cex_attribution_walker findings. " +
         "The walker complements the relay-burst detector: it fires when " +
         "an operator-labeled CEX wallet (Bitso, Binance, Coinbase, Gemini, " +
@@ -305,7 +311,8 @@ export const pulse: ServiceDef = {
     {
       name: "xrpl_pulse_network_stats",
       description:
-        "Free XRPL network summary: total funded addresses (per the " +
+        "Free. " +
+        "XRPL network summary: total funded addresses (per the " +
         "api.xrpl.to source), live trustline count, live offer count, " +
         "24h active address count, and snapshot freshness. Use this as " +
         "a baseline-state probe before paying for /events/recent or " +
@@ -323,7 +330,8 @@ export const pulse: ServiceDef = {
     {
       name: "xrpl_pulse_whale_flow_24h",
       description:
-        "Free aggregate of all whale_xrpl Payments above the storage " +
+        "Free. " +
+        "Aggregate of all whale_xrpl Payments above the storage " +
         "threshold in the trailing 24h. Returns total USD value, total " +
         "tx count, top sender + receiver labels (institutional " +
         "watchlist + auto-promoted), per-currency breakdown (XRP, RLUSD, " +
@@ -341,7 +349,8 @@ export const pulse: ServiceDef = {
     {
       name: "xrpl_pulse_exchange_flow_delta",
       description:
-        "Free per-UTC-day series of net XRPL exchange flow: inbound, " +
+        "Free. " +
+        "Per-UTC-day series of net XRPL exchange flow: inbound, " +
         "outbound, net (positive = exchanges are net-receivers of " +
         "XRP), 24h settlement-volume USD, active-float bridge components. " +
         "Same series XR-Flows /stats/correlation overlays with ETF AUM " +
@@ -366,7 +375,8 @@ export const pulse: ServiceDef = {
     {
       name: "xrpl_pulse_rwa_summary",
       description:
-        "Free RWA issuer rollup: per-issuer current obligations, " +
+        "Free. " +
+        "RWA issuer rollup: per-issuer current obligations, " +
         "net-circulating (treasury-adjusted where applicable), trustline " +
         "count, 24h mint and burn flow, AMM-of-RWA pool exposure. Covers " +
         "the full operator-curated issuer set plus auto-discovered " +

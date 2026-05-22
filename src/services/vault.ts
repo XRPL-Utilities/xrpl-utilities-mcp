@@ -19,6 +19,7 @@ export const vault: ServiceDef = {
     {
       name: "xrpl_vault_scan",
       description:
+        "Paid ($0.10 USD). " +
         "Per-issuer real-world-asset deep dive on the XRP Ledger. Accepts " +
         "{issuer: <wallet OR logical_label OR currency>} and returns the " +
         "issuer's metadata, current obligations + net-circulating supply " +
@@ -64,7 +65,8 @@ export const vault: ServiceDef = {
     {
       name: "xrpl_vault_daily_flow",
       description:
-        "Free cross-issuer daily flow series built from Vault's accruing " +
+        "Free. " +
+        "Cross-issuer daily flow series built from Vault's accruing " +
         "snapshots. Returns settlement_events_daily (mint + burn event " +
         "counts per UTC day, stacked by logical_label, currency-agnostic " +
         "so BRL/EUR/AUD/MWh issuers contribute alongside USD ones) and " +

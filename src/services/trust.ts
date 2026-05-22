@@ -20,6 +20,7 @@ export const trust: ServiceDef = {
     {
       name: "xrpl_trust_list_domains",
       description:
+        "Paid ($0.10 USD). " +
         "Enumerate all XRPL PermissionedDomain (XLS-80) ledger objects on " +
         "validated mainnet. Each record carries domain_id, owner_address, " +
         "owner_label (XRPScan), accepted_credentials[] (with hex-decoded " +
@@ -54,6 +55,7 @@ export const trust: ServiceDef = {
     {
       name: "xrpl_trust_get_domain",
       description:
+        "Paid ($0.10 USD). " +
         "Drill down on a single PermissionedDomain by 64-hex LedgerIndex. " +
         "Returns the list-view fields plus lifecycle (created_at, " +
         "last_modified_at, modification_count, walked from PreviousTxnID " +
@@ -84,6 +86,7 @@ export const trust: ServiceDef = {
     {
       name: "xrpl_trust_credential_issuers",
       description:
+        "Paid ($0.10 USD). " +
         "Aggregated view of every distinct credential issuer referenced " +
         "across all PermissionedDomain objects. Each entry: issuer_address, " +
         "issuer_label, domains_referencing (count), credential_types_issued " +
@@ -106,6 +109,7 @@ export const trust: ServiceDef = {
     {
       name: "xrpl_trust_recent_events",
       description:
+        "Paid ($0.10 USD). " +
         "XLS-70/80/81 lifecycle event stream sourced from XR-Trust's " +
         "long-lived XRPL WebSocket subscribe loop. Each event carries " +
         "tx_type (PermissionedDomainSet/Delete, CredentialCreate/Accept/" +
@@ -148,7 +152,8 @@ export const trust: ServiceDef = {
     {
       name: "xrpl_trust_list_operators_index",
       description:
-        "Free lightweight rollup of every PermissionedDomain operator " +
+        "Free. " +
+        "Lightweight rollup of every PermissionedDomain operator " +
         "indexed by XR-Trust: operator address, owner label, jurisdiction, " +
         "operator_status (active/proposed/etc.), domain count, credential " +
         "issuer count, and last-event timestamp. Paginated. Use this as " +
@@ -183,7 +188,8 @@ export const trust: ServiceDef = {
     {
       name: "xrpl_trust_operator_drilldown",
       description:
-        "Free deep-dive on one PermissionedDomain operator: full domain " +
+        "Free. " +
+        "Deep-dive on one PermissionedDomain operator: full domain " +
         "list with accepted-credentials breakdown, jurisdiction, owner " +
         "DID brief (XLS-40 + linked TOML metadata), institutional issuer " +
         "set, recent lifecycle event timeline. Flagship XLS-80 visibility " +
@@ -207,7 +213,8 @@ export const trust: ServiceDef = {
     {
       name: "xrpl_trust_operator_attribution",
       description:
-        "Free auto-walked institutional attribution for one PermissionedDomain " +
+        "Free. " +
+        "Auto-walked institutional attribution for one PermissionedDomain " +
         "operator: parent funder address + XRPScan well-known label (Bitso, " +
         "Coinbase, etc.), decoded accepted-credential types (e.g. EUROP_KYC, " +
         "USDC_KYC), per-credentialed-subject IOU trustline issuer cross-" +
@@ -234,7 +241,8 @@ export const trust: ServiceDef = {
     {
       name: "xrpl_trust_usage_summary",
       description:
-        "Free ecosystem-wide aggregate of XLS-70/80 + XLS-81 PermissionedDomain " +
+        "Free. " +
+        "Ecosystem-wide aggregate of XLS-70/80 + XLS-81 PermissionedDomain " +
         "activity over a configurable window (default 30 days, max 365). " +
         "One row of totals across every domain on mainnet: live domain count, " +
         "operator count, credential creates/accepts/revokes, permissioned " +
@@ -263,7 +271,8 @@ export const trust: ServiceDef = {
     {
       name: "xrpl_trust_jurisdictions",
       description:
-        "Free jurisdiction rollup across XRPL's permissioned stack. For " +
+        "Free. " +
+        "Jurisdiction rollup across XRPL's permissioned stack. For " +
         "every ISO-3166-1 alpha-2 country code attributed to at least one " +
         "operator or credential issuer, returns the count per kind plus an " +
         "explicit unattributed bucket with workflow hints. Jurisdiction " +

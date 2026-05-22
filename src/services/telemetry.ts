@@ -30,6 +30,7 @@ export const telemetry: ServiceDef = {
     {
       name: "xrpl_telemetry_snapshot",
       description:
+        "Paid ($0.10 USD). " +
         "One-shot XRPL macro snapshot. Returns supply (total / circulating " +
         "/ escrowed / dormant / AMM-locked / exchange omnibus / DEX " +
         "orderbook depth), liquidity (per-region 24h flows), amm (top " +
@@ -57,6 +58,7 @@ export const telemetry: ServiceDef = {
     {
       name: "xrpl_telemetry_get_quote",
       description:
+        "Paid flow step 1 ($0.10 USD total). " +
         "Start the async invoice flow: returns invoice_id, amount in " +
         "drops, payTo address, deepLink + QR, and expiry. The caller " +
         "pays the XRPL Payment to that address from any wallet, then " +
@@ -78,6 +80,7 @@ export const telemetry: ServiceDef = {
     {
       name: "xrpl_telemetry_get_status",
       description:
+        "Paid flow step 2 (no extra charge, polls invoice from step 1). " +
         "Poll the status of an invoice from xrpl_telemetry_get_quote. " +
         "Returns paid (bool), amount, ledger_index when settled, and " +
         "expiry. The MCP wrapper itself doesn't require a payment header " +
@@ -101,6 +104,7 @@ export const telemetry: ServiceDef = {
     {
       name: "xrpl_telemetry_get_results",
       description:
+        "Paid flow step 3 (no extra charge, returns results from settled invoice). " +
         "Fetch the full TelemetryPayload for an invoice once paid. Same " +
         "shape as xrpl_telemetry_snapshot. The MCP wrapper doesn't need " +
         "a payment header here because the $0.10 already settled when " +
@@ -123,7 +127,8 @@ export const telemetry: ServiceDef = {
     {
       name: "xrpl_telemetry_settlement_totals",
       description:
-        "Free aggregate XRPL settlement volume rollup: USD-denominated " +
+        "Free. " +
+        "Aggregate XRPL settlement volume rollup: USD-denominated " +
         "Payment volume across XRP and RLUSD legs over 24h / 7d / 30d, " +
         "annualized run rate, payment counts, coverage block describing " +
         "the first and latest hour bucket recorded by the settlement " +
@@ -143,7 +148,8 @@ export const telemetry: ServiceDef = {
     {
       name: "xrpl_telemetry_settlement_series",
       description:
-        "Free time-series of XRPL settlement volume: per-hour USD volume " +
+        "Free. " +
+        "Time-series of XRPL settlement volume: per-hour USD volume " +
         "stacked by currency leg (XRP at ledger-close spot, RLUSD at " +
         "$1.00) plus payment count. Complements the rollup endpoint; use " +
         "this for charting or change-point detection. Free, public.",
@@ -167,7 +173,8 @@ export const telemetry: ServiceDef = {
     {
       name: "xrpl_telemetry_dex_pair_volume",
       description:
-        "Free per-pair DEX volume rollup on XRPL: 24h, 7d, fill counts, " +
+        "Free. " +
+        "Per-pair DEX volume rollup on XRPL: 24h, 7d, fill counts, " +
         "volume by source (orderbook OfferCreate vs AMM), annualized run " +
         "rate. Curated pair set: XRP/RLUSD plus secondary pools. Reads " +
         "partial during the first week post-deploy; bootstrapping flag " +

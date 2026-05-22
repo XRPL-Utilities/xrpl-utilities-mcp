@@ -25,12 +25,27 @@ export function buildServer(opts: DispatchOptions = {}): Server {
   );
 
   // ---- Tools ---------------------------------------------------------------
+  // Each tool advertises a structured `_meta.pricing` block so MCP clients
+  // can render a paid/free badge or sort by price without parsing prose. The
+  // standard MCP spec ignores unknown _meta keys, so clients that don't render
+  // it lose nothing; clients that do render get a clean signal.
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: ALL_TOOLS.map((t) => ({
-      name: t.name,
-      description: t.description,
-      inputSchema: t.inputSchema,
-    })),
+    tools: ALL_TOOLS.map((t) => {
+      const pricing =
+        t.authMode === "free"
+          ? { paid: false, priceUsd: 0 }
+          : t.authMode === "async_invoice"
+            ? { paid: true, priceUsd: 0.10, settlement: "xrpl_invoice" }
+            : t.name === "xrpl_pulse_stream_purchase"
+              ? { paid: true, priceUsd: 0.50, priceUsdMax: 7.50, settlement: "x402_inline", note: "tiered_1h_6h_24h" }
+              : { paid: true, priceUsd: 0.10, settlement: "x402_inline" };
+      return {
+        name: t.name,
+        description: t.description,
+        inputSchema: t.inputSchema,
+        _meta: { pricing },
+      };
+    }),
   }));
 
   server.setRequestHandler(CallToolRequestSchema, async (req) => {

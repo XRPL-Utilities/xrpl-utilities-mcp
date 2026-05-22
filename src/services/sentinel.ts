@@ -20,6 +20,7 @@ export const sentinel: ServiceDef = {
     {
       name: "xrpl_sentinel_scan",
       description:
+        "Paid ($0.10 USD). " +
         "Classify an XRPL wallet by its on-chain activity pattern. Returns " +
         "activity_score (0-100, higher = more automated/service-like), " +
         "activity_level (Low/Medium/High/Dormant/Unknown), confidence, " +
@@ -57,6 +58,7 @@ export const sentinel: ServiceDef = {
     {
       name: "xrpl_sentinel_scan_history",
       description:
+        "Paid ($0.10 USD). " +
         "Return up to 25 prior recorded scans for an address so an agent " +
         "can read trajectory without scanning the wallet N times. Each " +
         "history row carries score, level, signals, features, and " +
