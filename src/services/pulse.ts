@@ -22,27 +22,9 @@ export const pulse: ServiceDef = {
       name: "xrpl_pulse_recent_events",
       description:
         "Paid ($0.10 USD). " +
-        "Return the most-recent normalized XRPL signal events newest-first. " +
-        "Mixes six streams: public-source news (regulatory press + " +
-        "central banks + crypto media filtered for XRP/RLUSD/XRPL/Ripple), " +
-        "on-chain whale activity (every Payment above the storage " +
-        "threshold), XLS-70/80/81 permissioned-domain lifecycle events " +
-        "sourced from XR-Trust, Sentinel state-change signals " +
-        "(activity-level transitions + first-fire of " +
-        "INSTITUTIONAL_SCALE_FLOW / DORMANT_REAWAKENING / " +
-        "SCORE_TRAJECTORY_BOT_ONBOARDING), RWA issuer per-mint/per-burn " +
-        "flow (Ondo OUSG (permissioned + public), Schuman EUROP, " +
-        "Braza USDB + BBRL, SG-FORGE EURCV, Guggenheim DCP, Justoken " +
-        "JMWH, OpenEden TBL, RLUSD, AUDD, Archax abrdn MMF, Circle " +
-        "USDCAllow, Ctrl Alt DIA-L-COL1, Ctrl Alt DLD-25-24722-IAHG, " +
-        "Quantoz EURQ), and RWA issuer daily aggregate snapshots " +
-        "(obligations + trustline-count deltas per UTC day, with " +
-        "treasury-balance subtraction applied across USD-pegged issuers " +
-        "as appropriate). Each event " +
-        "carries title, brief, published_at, source_appearances[], " +
-        "correlation (news only), active_utility (per-source canonical " +
-        "shape), and target_addresses[]. Costs $0.10 USD per call paid " +
-        "via x402 (XRP/RLUSD on XRPL or USDC on Base).",
+        "Most-recent XRPL signal events newest-first. Mixes news, whale activity, " +
+        "permissioned-domain lifecycle, Sentinel signals, and RWA issuer flows. " +
+        "Filterable by kind, time range, and min whale USD.",
       inputSchema: {
         type: "object",
         properties: {
@@ -100,17 +82,8 @@ export const pulse: ServiceDef = {
       name: "xrpl_pulse_events_by_address",
       description:
         "Paid ($0.10 USD). " +
-        "Return Pulse events that reference a specific XRPL classic " +
-        "address, newest-first. Match strategy spans all event sources: " +
-        "whale events where the address is sender or receiver, " +
-        "sentinel_signal events for that address, news + permissioned- " +
-        "domain events whose target_addresses[] includes it. Useful " +
-        "as the on-chain-history complement to xrpl_sentinel_scan " +
-        "(behavioral classification of one wallet); together they answer " +
-        "'what does this wallet look like AND what has it actually been " +
-        "doing on the public feed?'. No title-similarity clustering on " +
-        "this endpoint - events about the same wallet aren't necessarily " +
-        "about the same story. Costs $0.10 USD per call paid via x402 (XRP/RLUSD on XRPL or USDC on Base).",
+        "Pulse events referencing a specific XRPL address (whale, sentinel signal, " +
+        "news, permissioned-domain). Complements xrpl_sentinel_scan with event history.",
       inputSchema: {
         type: "object",
         properties: {
@@ -149,19 +122,9 @@ export const pulse: ServiceDef = {
       name: "xrpl_pulse_stream_purchase",
       description:
         "Paid (tiered: 1h ~$0.50 / 6h ~$2.50 / 24h ~$7.50). " +
-        "Buy a time-boxed XR-Pulse live WebSocket subscription. Returns " +
-        "a stream_token (HS256 JWT) plus a ws_url. Open the WebSocket " +
-        "and pass the token as the ?token= query parameter; events are " +
-        "pushed as they fire, with server-side filtering by source / " +
-        "signal / min USD value bound into the token at purchase time. " +
-        "Tiers: 1h ~$0.50, 6h ~$2.50, 24h ~$7.50 (XRP/RLUSD on XRPL or USDC on Base via " +
-        "x402). Reconnect with the same token until expires_at_unix; " +
-        "no event replay across reconnects (use xrpl_pulse_recent_events " +
-        "to catch up history). The WebSocket itself is not exposed as " +
-        "an MCP tool (MCP is request/response) — agents take the token " +
-        "and open the WebSocket directly. v2 of this surface will swap " +
-        "the time-boxed billing for native XRPL Payment Channels with " +
-        "per-message claims.",
+        "Buy a time-boxed WebSocket subscription to live Pulse events. Returns " +
+        "a stream_token JWT and ws_url. Server-side filtering by source, signal, " +
+        "and min USD is bound into the token at purchase.",
       inputSchema: {
         type: "object",
         properties: {
@@ -218,20 +181,8 @@ export const pulse: ServiceDef = {
       name: "xrpl_pulse_ripple_counterparties",
       description:
         "Free. " +
-        "Anonymized view of XR-Pulse's Ripple-counterparty auto-discovery " +
-        "loop plus the relay-burst detector. The discovery loop polls a " +
-        "curated set of Ripple-controlled wallets (multi-signer treasuries, " +
-        "the RLUSD distribution wallet, and TOML-attested escrow wallets) " +
-        "for outgoing Payments to new destinations and scores each on " +
-        "seven weighted heuristics (XRP balance, RLUSD pre-approval, " +
-        "account age, multi-exchange connectivity, intake-treasury " +
-        "fingerprint, Ripple-funded-MM inflow, recency). The relay-burst " +
-        "detector flags multi-hop pure-payment chains (>=3 hops, >=$30M " +
-        "total, >=$10M per hop, within 1h) where at least one wallet is " +
-        "operator-labeled. Returns score-tier and funding-source " +
-        "distributions plus relay-burst summaries (hop_count, total_usd, " +
-        "anchor_label, news_correlation_count); specific wallet addresses " +
-        "are intentionally NOT exposed on this surface. Free, public.",
+        "Anonymized Ripple-counterparty auto-discovery and relay-burst detector findings. " +
+        "Score-tier and funding-source distributions; specific wallet addresses not exposed.",
       inputSchema: {
         type: "object",
         properties: {
@@ -254,17 +205,8 @@ export const pulse: ServiceDef = {
       name: "xrpl_pulse_ripple_topology",
       description:
         "Free. " +
-        "Public-attribution map of the Ripple ecosystem on XRPL. Three " +
-        "columns matching the xrpl-utilities.com/lineage/ topology view: " +
-        "Source (Ripple-published or XRPScan-attested infrastructure — " +
-        "issuer, distribution, MM hub, root treasury, escrow wallets, " +
-        "burn agent — wallet addresses + labels exposed), Pipeline (the " +
-        "operator-curated middle layer; shown by role + count only, " +
-        "specific addresses intentionally not exposed because the " +
-        "operator-curated wallet list is the moat), and Exits (named " +
-        "CEX hot wallets attested by XRPScan well-known — Binance, " +
-        "Coinbase, Bitso, etc. — wallet addresses + entity names " +
-        "exposed). Free, public.",
+        "Ripple ecosystem topology map: Source (treasury/issuer/escrow wallets), " +
+        "Pipeline (curated middle layer by role), and Exits (named CEX hot wallets).",
       inputSchema: {
         type: "object",
         properties: {},
@@ -278,18 +220,9 @@ export const pulse: ServiceDef = {
       name: "xrpl_pulse_cex_attribution",
       description:
         "Free. " +
-        "Anonymized view of XR-Pulse's cex_attribution_walker findings. " +
-        "The walker complements the relay-burst detector: it fires when " +
-        "an operator-labeled CEX wallet (Bitso, Binance, Coinbase, Gemini, " +
-        "Kraken, Bitstamp, OKX, Ceffu, etc.) receives a whale Payment over " +
-        "$5M and walks the chain backward up to 4 hops within a 4h window, " +
-        "looking for unlabeled intermediate wallets that the relay-burst " +
-        "detector skips because they pass through long-standing Ripple " +
-        "infrastructure that doesn't show the burst fingerprint. Each row " +
-        "is one unlabeled intermediate plus the chain it sat in (hop " +
-        "count, total USD, sanitized anchor label, sanitized terminal CEX " +
-        "label). Specific wallet addresses, intermediate addresses, and " +
-        "tx hashes are NOT exposed on this surface. Free, public.",
+        "CEX attribution walker findings: backward-walked payment chains ending at " +
+        "named exchanges. Hop count, total USD, anchor and terminal labels; " +
+        "specific addresses not exposed.",
       inputSchema: {
         type: "object",
         properties: {
@@ -312,12 +245,8 @@ export const pulse: ServiceDef = {
       name: "xrpl_pulse_network_stats",
       description:
         "Free. " +
-        "XRPL network summary: total funded addresses (per the " +
-        "api.xrpl.to source), live trustline count, live offer count, " +
-        "24h active address count, and snapshot freshness. Use this as " +
-        "a baseline-state probe before paying for /events/recent or " +
-        "deciding whether activity-level signals are likely meaningful. " +
-        "Free, public.",
+        "XRPL network summary: funded addresses, trustline count, offer count, " +
+        "24h active addresses, and snapshot freshness.",
       inputSchema: {
         type: "object",
         properties: {},
@@ -331,12 +260,8 @@ export const pulse: ServiceDef = {
       name: "xrpl_pulse_whale_flow_24h",
       description:
         "Free. " +
-        "Aggregate of all whale_xrpl Payments above the storage " +
-        "threshold in the trailing 24h. Returns total USD value, total " +
-        "tx count, top sender + receiver labels (institutional " +
-        "watchlist + auto-promoted), per-currency breakdown (XRP, RLUSD, " +
-        "other IOUs). Comparable across services and days; no specific " +
-        "wallet addresses are returned. Free, public.",
+        "Trailing 24h whale Payment aggregate: total USD, tx count, top labels, " +
+        "per-currency breakdown. No specific addresses returned.",
       inputSchema: {
         type: "object",
         properties: {},
@@ -350,11 +275,8 @@ export const pulse: ServiceDef = {
       name: "xrpl_pulse_exchange_flow_delta",
       description:
         "Free. " +
-        "Per-UTC-day series of net XRPL exchange flow: inbound, " +
-        "outbound, net (positive = exchanges are net-receivers of " +
-        "XRP), 24h settlement-volume USD, active-float bridge components. " +
-        "Same series XR-Flows /stats/correlation overlays with ETF AUM " +
-        "for the correlation headline. Free, public.",
+        "Per-UTC-day series of net XRPL exchange flow: inbound, outbound, net, " +
+        "and settlement volume. Same series used in XR-Flows ETF correlation.",
       inputSchema: {
         type: "object",
         properties: {
@@ -376,14 +298,8 @@ export const pulse: ServiceDef = {
       name: "xrpl_pulse_rwa_summary",
       description:
         "Free. " +
-        "RWA issuer rollup: per-issuer current obligations, " +
-        "net-circulating (treasury-adjusted where applicable), trustline " +
-        "count, 24h mint and burn flow, AMM-of-RWA pool exposure. Covers " +
-        "the full operator-curated issuer set plus auto-discovered " +
-        "candidates surfaced via the rwa_issuer_discovery loop. Native " +
-        "unit-of-account; no fabricated USD valuation. Same data backing " +
-        "XR-Vault's per-issuer deep dive, surfaced here as a free " +
-        "cross-issuer view. Free, public.",
+        "Cross-issuer RWA rollup: obligations, net-circulating supply, trustline count, " +
+        "24h mint/burn flow, and AMM pool exposure per tracked issuer.",
       inputSchema: {
         type: "object",
         properties: {},

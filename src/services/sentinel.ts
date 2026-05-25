@@ -21,14 +21,8 @@ export const sentinel: ServiceDef = {
       name: "xrpl_sentinel_scan",
       description:
         "Paid ($0.10 USD). " +
-        "Classify an XRPL wallet by its on-chain activity pattern. Returns " +
-        "activity_score (0-100, higher = more automated/service-like), " +
-        "activity_level (Low/Medium/High/Dormant/Unknown), confidence, " +
-        "signals[] from a 35-entry behavioral catalog, top_counterparties[] " +
-        "with public labels, an AI-generated reasoning narrative, and a " +
-        "_delta block when prior recorded scans exist. Costs $0.10 USD per " +
-        "call paid via x402 (XRP/RLUSD on XRPL or USDC on Base). Pass payment_signature " +
-        "from your x402-xrpl client.",
+        "Classify an XRPL wallet by on-chain activity pattern. Returns activity_score (0-100), " +
+        "activity_level, confidence, behavioral signals, top counterparties, and AI reasoning.",
       inputSchema: {
         type: "object",
         properties: {
@@ -59,12 +53,7 @@ export const sentinel: ServiceDef = {
       name: "xrpl_sentinel_scan_history",
       description:
         "Paid ($0.10 USD). " +
-        "Return up to 25 prior recorded scans for an address so an agent " +
-        "can read trajectory without scanning the wallet N times. Each " +
-        "history row carries score, level, signals, features, and " +
-        "scanned_at. Costs $0.10 USD per call paid via x402 (XRP/RLUSD on XRPL or USDC on Base). " +
-        "Recording began with schema 2.1.0; older paid scans were not " +
-        "persisted.",
+        "Return up to 25 prior recorded scans for an address to read score trajectory over time.",
       inputSchema: {
         type: "object",
         properties: {

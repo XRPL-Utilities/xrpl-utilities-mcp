@@ -31,14 +31,8 @@ export const telemetry: ServiceDef = {
       name: "xrpl_telemetry_snapshot",
       description:
         "Paid ($0.10 USD). " +
-        "One-shot XRPL macro snapshot. Returns supply (total / circulating " +
-        "/ escrowed / dormant / AMM-locked / exchange omnibus / DEX " +
-        "orderbook depth), liquidity (per-region 24h flows), amm (top " +
-        "pairs + vaults), derived_models.active_float (modeled supply " +
-        "available for 3-second settlement, with the full additive " +
-        "mathematical_bridge), and utility_floor (baseline equilibrium " +
-        "price + premium ratio). Standard x402 verify-then-work-then-" +
-        "settle. $0.10 USD per call. Pass payment_signature.",
+        "One-shot XRPL macro snapshot: supply breakdown, liquidity flows, AMM state, " +
+        "derived Active Float model, and utility floor price.",
       inputSchema: {
         type: "object",
         properties: {
@@ -59,14 +53,8 @@ export const telemetry: ServiceDef = {
       name: "xrpl_telemetry_get_quote",
       description:
         "Paid flow step 1 ($0.10 USD total). " +
-        "Start the async invoice flow: returns invoice_id, amount in " +
-        "drops, payTo address, deepLink + QR, and expiry. The caller " +
-        "pays the XRPL Payment to that address from any wallet, then " +
-        "polls xrpl_telemetry_get_status until paid: true, then calls " +
-        "xrpl_telemetry_get_results. The MCP wrapper itself doesn't " +
-        "require a payment_signature header, but the snapshot still " +
-        "costs $0.10 USD - the payment just happens out-of-band as a " +
-        "regular XRPL Payment instead of an inline x402 header.",
+        "Start async invoice flow: returns invoice_id, payTo address, deepLink, QR, " +
+        "and expiry. Pay via XRPL Payment, then poll get_status, then call get_results.",
       inputSchema: {
         type: "object",
         properties: {},
@@ -80,12 +68,9 @@ export const telemetry: ServiceDef = {
     {
       name: "xrpl_telemetry_get_status",
       description:
-        "Paid flow step 2 (no extra charge, polls invoice from step 1). " +
-        "Poll the status of an invoice from xrpl_telemetry_get_quote. " +
-        "Returns paid (bool), amount, ledger_index when settled, and " +
-        "expiry. The MCP wrapper itself doesn't require a payment header " +
-        "(the operator's check is just reading the validated XRPL ledger " +
-        "for the deposit transaction).",
+        "Paid flow step 2 (no extra charge). " +
+        "Poll invoice status from get_quote. Returns paid (bool), amount, " +
+        "ledger_index, and expiry.",
       inputSchema: {
         type: "object",
         properties: {
@@ -104,11 +89,9 @@ export const telemetry: ServiceDef = {
     {
       name: "xrpl_telemetry_get_results",
       description:
-        "Paid flow step 3 (no extra charge, returns results from settled invoice). " +
-        "Fetch the full TelemetryPayload for an invoice once paid. Same " +
-        "shape as xrpl_telemetry_snapshot. The MCP wrapper doesn't need " +
-        "a payment header here because the $0.10 already settled when " +
-        "the caller paid the deeplink in step 2 of the flow.",
+        "Paid flow step 3 (no extra charge). " +
+        "Fetch full Telemetry snapshot payload once invoice is paid. Same shape as " +
+        "xrpl_telemetry_snapshot.",
       inputSchema: {
         type: "object",
         properties: {
@@ -128,14 +111,8 @@ export const telemetry: ServiceDef = {
       name: "xrpl_telemetry_settlement_totals",
       description:
         "Free. " +
-        "Aggregate XRPL settlement volume rollup: USD-denominated " +
-        "Payment volume across XRP and RLUSD legs over 24h / 7d / 30d, " +
-        "annualized run rate, payment counts, coverage block describing " +
-        "the first and latest hour bucket recorded by the settlement " +
-        "walker. Walker is a continuous async loop (not a slow-task); " +
-        "see /healthz checks.settlement_walker for freshness. Bootstrapping " +
-        "flag surfaces in the settlement block during the first 7d / 30d " +
-        "post-deploy. Free, public.",
+        "XRPL settlement volume rollup: 24h/7d/30d USD volume across XRP and RLUSD, " +
+        "annualized run rate, and payment counts.",
       inputSchema: {
         type: "object",
         properties: {},
@@ -149,10 +126,8 @@ export const telemetry: ServiceDef = {
       name: "xrpl_telemetry_settlement_series",
       description:
         "Free. " +
-        "Time-series of XRPL settlement volume: per-hour USD volume " +
-        "stacked by currency leg (XRP at ledger-close spot, RLUSD at " +
-        "$1.00) plus payment count. Complements the rollup endpoint; use " +
-        "this for charting or change-point detection. Free, public.",
+        "Per-hour XRPL settlement volume time-series stacked by currency (XRP, RLUSD) " +
+        "with payment counts. For charting or change-point detection.",
       inputSchema: {
         type: "object",
         properties: {
@@ -174,11 +149,8 @@ export const telemetry: ServiceDef = {
       name: "xrpl_telemetry_dex_pair_volume",
       description:
         "Free. " +
-        "Per-pair DEX volume rollup on XRPL: 24h, 7d, fill counts, " +
-        "volume by source (orderbook OfferCreate vs AMM), annualized run " +
-        "rate. Curated pair set: XRP/RLUSD plus secondary pools. Reads " +
-        "partial during the first week post-deploy; bootstrapping flag " +
-        "surfaces this. Free, public.",
+        "Per-pair DEX volume on XRPL: 24h and 7d volume, fill counts, orderbook vs AMM " +
+        "source split, and annualized run rate.",
       inputSchema: {
         type: "object",
         properties: {

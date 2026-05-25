@@ -20,21 +20,8 @@ export const vault: ServiceDef = {
       name: "xrpl_vault_scan",
       description:
         "Paid ($0.10 USD). " +
-        "Per-issuer real-world-asset deep dive on the XRP Ledger. Accepts " +
-        "{issuer: <wallet OR logical_label OR currency>} and returns the " +
-        "issuer's metadata, current obligations + net-circulating supply " +
-        "(treasury-adjusted where applicable), trustline count, last-24h " +
-        "mint and burn flow, AMM-of-RWA pool exposure (every XLS-30 pool " +
-        "containing this issuer's IOU with native-unit balances + LP " +
-        "supply), and a daily history series that accrues over time. " +
-        "Tracked issuer set covers Ondo OUSG (permissioned + public), " +
-        "Schuman EUROP, Braza USDB, Braza BBRL, SG-FORGE EURCV, Guggenheim " +
-        "DCP (Zeconomy SPV), Justoken JMWH (in MWh, not USD), OpenEden " +
-        "TBL, Ripple RLUSD, AUDD, Circle USDCAllow, Ctrl Alt DIA-L-COL1, " +
-        "Ctrl Alt DLD-25-24722-IAHG, Quantoz EURQ, plus Archax abrdn USD " +
-        "Liquidity Fund as rails-only for first-mint capture. $0.10 USD per call paid via " +
-        "x402 v2 (XRP/RLUSD on XRPL via t54 facilitator, or USDC on Base via " +
-        "Coinbase facilitator).",
+        "Per-issuer RWA deep dive: supply, mint/burn flow, AMM exposure, and daily " +
+        "history. Accepts wallet address, issuer label, or currency code.",
       inputSchema: {
         type: "object",
         properties: {
@@ -66,16 +53,8 @@ export const vault: ServiceDef = {
       name: "xrpl_vault_daily_flow",
       description:
         "Free. " +
-        "Cross-issuer daily flow series built from Vault's accruing " +
-        "snapshots. Returns settlement_events_daily (mint + burn event " +
-        "counts per UTC day, stacked by logical_label, currency-agnostic " +
-        "so BRL/EUR/AUD/MWh issuers contribute alongside USD ones) and " +
-        "usd_pegged_net_flow_daily (sums net dollar inflow per UTC day " +
-        "across asset classes at or near 1 USD: fiat_stable_usd, " +
-        "treasuries, commercial_paper, money_market). EUR/BRL/AUD/MWh " +
-        "issuers appear in per_issuer_series in native units but are " +
-        "deliberately omitted from the USD aggregate. Cross-issuer view " +
-        "complementing the paid per-issuer /scan deep dive. Free, public.",
+        "Cross-issuer daily RWA flow series: mint/burn event counts per day and " +
+        "USD-pegged net inflow aggregate. Complements the paid per-issuer scan.",
       inputSchema: {
         type: "object",
         properties: {

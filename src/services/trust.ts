@@ -21,12 +21,8 @@ export const trust: ServiceDef = {
       name: "xrpl_trust_list_domains",
       description:
         "Paid ($0.10 USD). " +
-        "Enumerate all XRPL PermissionedDomain (XLS-80) ledger objects on " +
-        "validated mainnet. Each record carries domain_id, owner_address, " +
-        "owner_label (XRPScan), accepted_credentials[] (with hex-decoded " +
-        "credential_type when ASCII-printable), institutional_issuer_count, " +
-        "and full ledger metadata. Walk_status indicates snapshot " +
-        "completeness. $0.10 USD per call paid via x402.",
+        "List all XRPL PermissionedDomain (XLS-80) objects on mainnet with owner, " +
+        "accepted credentials, and institutional issuer counts. Paginated.",
       inputSchema: {
         type: "object",
         properties: {
@@ -56,12 +52,8 @@ export const trust: ServiceDef = {
       name: "xrpl_trust_get_domain",
       description:
         "Paid ($0.10 USD). " +
-        "Drill down on a single PermissionedDomain by 64-hex LedgerIndex. " +
-        "Returns the list-view fields plus lifecycle (created_at, " +
-        "last_modified_at, modification_count, walked from PreviousTxnID " +
-        "meta chain), permissioned_market (XLS-81 owner-side offers + " +
-        "AMMs), and identity (XLS-40 DID + parsed .well-known/" +
-        "xrp-ledger.toml when published). $0.10 USD per call.",
+        "Deep dive on one PermissionedDomain by 64-hex ID: lifecycle history, " +
+        "permissioned market activity (XLS-81), and DID/TOML identity.",
       inputSchema: {
         type: "object",
         properties: {
@@ -87,11 +79,8 @@ export const trust: ServiceDef = {
       name: "xrpl_trust_credential_issuers",
       description:
         "Paid ($0.10 USD). " +
-        "Aggregated view of every distinct credential issuer referenced " +
-        "across all PermissionedDomain objects. Each entry: issuer_address, " +
-        "issuer_label, domains_referencing (count), credential_types_issued " +
-        "(sorted unique). Useful for ranking which institutional issuers " +
-        "are most adopted on-chain. $0.10 USD per call.",
+        "All credential issuers across PermissionedDomains: address, label, " +
+        "referencing domain count, and credential types issued.",
       inputSchema: {
         type: "object",
         properties: {
@@ -110,13 +99,8 @@ export const trust: ServiceDef = {
       name: "xrpl_trust_recent_events",
       description:
         "Paid ($0.10 USD). " +
-        "XLS-70/80/81 lifecycle event stream sourced from XR-Trust's " +
-        "long-lived XRPL WebSocket subscribe loop. Each event carries " +
-        "tx_type (PermissionedDomainSet/Delete, CredentialCreate/Accept/" +
-        "Delete, OfferCreate/OfferCancel, AMMCreate/etc.), tx_hash, " +
-        "account, domain_id, ledger_index, and tx_type-specific payload " +
-        "(credential_type for XLS-70, taker_gets/pays for XLS-81). " +
-        "Cursor via since=trust_lifecycle_<n>. $0.10 USD per call.",
+        "XLS-70/80/81 lifecycle event stream: domain creates/deletes, credential " +
+        "activity, permissioned offers and AMM events. Cursor-paginated.",
       inputSchema: {
         type: "object",
         properties: {
@@ -153,12 +137,8 @@ export const trust: ServiceDef = {
       name: "xrpl_trust_list_operators_index",
       description:
         "Free. " +
-        "Lightweight rollup of every PermissionedDomain operator " +
-        "indexed by XR-Trust: operator address, owner label, jurisdiction, " +
-        "operator_status (active/proposed/etc.), domain count, credential " +
-        "issuer count, and last-event timestamp. Paginated. Use this as " +
-        "the index before drilling into a single operator via " +
-        "xrpl_trust_operator_drilldown. Free, public.",
+        "Index of all PermissionedDomain operators: address, label, jurisdiction, " +
+        "status, domain count, issuer count. Paginated.",
       inputSchema: {
         type: "object",
         properties: {
@@ -189,12 +169,8 @@ export const trust: ServiceDef = {
       name: "xrpl_trust_operator_drilldown",
       description:
         "Free. " +
-        "Deep-dive on one PermissionedDomain operator: full domain " +
-        "list with accepted-credentials breakdown, jurisdiction, owner " +
-        "DID brief (XLS-40 + linked TOML metadata), institutional issuer " +
-        "set, recent lifecycle event timeline. Flagship XLS-80 visibility " +
-        "surface; complements the paid /scan path with operator-level " +
-        "context. Free, public.",
+        "Deep dive on one PermissionedDomain operator: domains, credentials, " +
+        "jurisdiction, DID identity, institutional issuers, and lifecycle events.",
       inputSchema: {
         type: "object",
         properties: {
@@ -214,15 +190,8 @@ export const trust: ServiceDef = {
       name: "xrpl_trust_operator_attribution",
       description:
         "Free. " +
-        "Auto-walked institutional attribution for one PermissionedDomain " +
-        "operator: parent funder address + XRPScan well-known label (Bitso, " +
-        "Coinbase, etc.), decoded accepted-credential types (e.g. EUROP_KYC, " +
-        "USDC_KYC), per-credentialed-subject IOU trustline issuer cross-" +
-        "reference (which stablecoin or asset is gated), and a one-sentence " +
-        "plain-English summary plus a confidence tier (high|medium|low). " +
-        "Walk fires automatically on every PermissionedDomainSet from the " +
-        "subscribe loop; backfilled on Trust startup for pre-existing " +
-        "operators. 404 if no walk recorded. Free, public.",
+        "Institutional attribution for one PermissionedDomain operator: parent funder, " +
+        "credential types, gated assets, plain-English summary, and confidence tier.",
       inputSchema: {
         type: "object",
         properties: {
@@ -242,15 +211,8 @@ export const trust: ServiceDef = {
       name: "xrpl_trust_usage_summary",
       description:
         "Free. " +
-        "Ecosystem-wide aggregate of XLS-70/80 + XLS-81 PermissionedDomain " +
-        "activity over a configurable window (default 30 days, max 365). " +
-        "One row of totals across every domain on mainnet: live domain count, " +
-        "operator count, credential creates/accepts/revokes, permissioned " +
-        "offer creates/cancels, permissioned payments, AMM events, domain " +
-        "lifecycle events, count of operators with auto-walked institutional " +
-        "attribution. Ships a short narrative line. Use this to track " +
-        "institutional adoption velocity on XRPL's permissioned stack. " +
-        "Per-operator detail stays on the paid drill-down. Free, public.",
+        "Ecosystem-wide PermissionedDomain activity aggregate: domain count, " +
+        "operator count, credential and market event totals over a configurable window.",
       inputSchema: {
         type: "object",
         properties: {
@@ -272,13 +234,8 @@ export const trust: ServiceDef = {
       name: "xrpl_trust_jurisdictions",
       description:
         "Free. " +
-        "Jurisdiction rollup across XRPL's permissioned stack. For " +
-        "every ISO-3166-1 alpha-2 country code attributed to at least one " +
-        "operator or credential issuer, returns the count per kind plus an " +
-        "explicit unattributed bucket with workflow hints. Jurisdiction " +
-        "inferred from KNOWN_JURISDICTIONS override, self-attested TOML " +
-        "country field, or ccTLD of org_url / source_toml_url / XRPScan " +
-        "resolved domain. gTLDs are never auto-attributed. Free, public.",
+        "Jurisdiction rollup across XRPL's permissioned stack: per-country operator " +
+        "and issuer counts with an unattributed bucket.",
       inputSchema: {
         type: "object",
         properties: {},
