@@ -30,44 +30,31 @@ export const pulse: ServiceDef = {
         properties: {
           limit: {
             type: "integer",
-            description: "Max events to return (1-500). Default 50.",
             minimum: 1,
             maximum: 500,
             default: 50,
           },
           since_iso: {
             type: "string",
-            description:
-              "ISO 8601 timestamp; only events with published_at >= this " +
-              "are returned. Optional.",
+            description: "ISO 8601 lower bound on published_at.",
           },
           before_iso: {
             type: "string",
-            description:
-              "ISO 8601 cursor for backward pagination. When set, only " +
-              "events strictly older than this timestamp are returned. " +
-              "Pair with the oldest event's published_at from a prior " +
-              "response to walk backward through history. Optional.",
+            description: "ISO 8601 upper bound for backward pagination.",
           },
           kind: {
             type: "string",
             enum: ["news", "activity"],
-            description:
-              "Source-bucket filter. 'news' returns RSS sources only; " +
-              "'activity' returns whale + sentinel_signal + " +
-              "permissioned_domain rows. Omit to return the mixed feed.",
+            description: "Filter by source bucket. Omit for mixed feed.",
           },
           min_whale_usd: {
             type: "number",
-            description:
-              "Suppress whale events below this USD threshold. Default " +
-              "$1,000,000 (whale-grade only). Pass 0 to see the full " +
-              "$50k+ activity stream.",
+            description: "USD floor for whale events. Default $1M.",
             minimum: 0,
           },
           payment_signature: {
             type: "string",
-            description: "x402 v2 PAYMENT-SIGNATURE header.",
+            description: "x402 payment header.",
           },
         },
         additionalProperties: false,
@@ -89,24 +76,21 @@ export const pulse: ServiceDef = {
         properties: {
           address: {
             type: "string",
-            description: "XRPL classic address (starts with 'r', 25-35 chars).",
+            description: "XRPL r-address.",
           },
           limit: {
             type: "integer",
-            description: "Max events to return (1-200). Default 50.",
             minimum: 1,
             maximum: 200,
             default: 50,
           },
           since_iso: {
             type: "string",
-            description:
-              "ISO 8601 timestamp; only events with published_at >= this " +
-              "are returned. Optional.",
+            description: "ISO 8601 lower bound on published_at.",
           },
           payment_signature: {
             type: "string",
-            description: "x402 v2 PAYMENT-SIGNATURE header.",
+            description: "x402 payment header.",
           },
         },
         required: ["address"],
@@ -131,42 +115,28 @@ export const pulse: ServiceDef = {
           duration: {
             type: "string",
             enum: ["1h", "6h", "24h"],
-            description: "Subscription window length. Default 1h.",
             default: "1h",
           },
           min_usd: {
             type: "number",
-            description:
-              "Optional server-side filter: drop whale-style events " +
-              "whose active_utility.usd_value is below this floor. " +
-              "Bound into the JWT — change filters means buying a new " +
-              "subscription.",
+            description: "USD floor for whale events. Bound into JWT.",
             minimum: 0,
           },
           sources: {
             type: "array",
             items: { type: "string" },
-            description:
-              "Optional source allowlist (whale_xrpl, sentinel_signal, " +
-              "permissioned_domain_lifecycle, rwa_issuer_flow, " +
-              "rwa_issuer_daily, rwa_amm_pool_state, plus any news " +
-              "source key). Omit to receive every source.",
+            description: "Source allowlist. Omit for all sources.",
             maxItems: 32,
           },
           signals: {
             type: "array",
             items: { type: "string" },
-            description:
-              "Optional signal allowlist (whale_transfer, " +
-              "INSTITUTIONAL_SCALE_FLOW, issuer_deepfreeze, " +
-              "token_escrow_event, permissioned_dex_event, etc.). " +
-              "Filters on active_utility.signal (whale-style) or " +
-              "active_utility.signals[].signal (news-style).",
+            description: "Signal allowlist. Omit for all signals.",
             maxItems: 32,
           },
           payment_signature: {
             type: "string",
-            description: "x402 v2 PAYMENT-SIGNATURE header.",
+            description: "x402 payment header.",
           },
         },
         additionalProperties: false,
@@ -188,8 +158,6 @@ export const pulse: ServiceDef = {
         properties: {
           limit: {
             type: "integer",
-            description:
-              "Max candidate rows to summarize (1-200). Default 50.",
             minimum: 1,
             maximum: 200,
             default: 50,
@@ -228,8 +196,6 @@ export const pulse: ServiceDef = {
         properties: {
           limit: {
             type: "integer",
-            description:
-              "Max candidate rows to summarize (1-200). Default 50.",
             minimum: 1,
             maximum: 200,
             default: 50,
@@ -282,7 +248,7 @@ export const pulse: ServiceDef = {
         properties: {
           days: {
             type: "integer",
-            description: "Trailing day count (1-90). Default 30.",
+            description: "Trailing days.",
             minimum: 1,
             maximum: 90,
             default: 30,

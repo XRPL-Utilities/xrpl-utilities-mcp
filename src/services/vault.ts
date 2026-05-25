@@ -27,17 +27,11 @@ export const vault: ServiceDef = {
         properties: {
           issuer: {
             type: "string",
-            description:
-              "Wallet (r-prefix XRPL classic address; exact match) OR " +
-              "logical_label (e.g. 'Ondo OUSG', 'Justoken JMWH'; " +
-              "case-insensitive) OR currency code (e.g. 'OUSG', 'TBL', " +
-              "'RLUSD'; case-insensitive). Resolution priority: wallet > " +
-              "logical_label > currency. Returns 404 when no tracked " +
-              "issuer matches.",
+            description: "r-address, label (e.g. 'Ondo OUSG'), or currency code (e.g. 'RLUSD').",
           },
           payment_signature: {
             type: "string",
-            description: "x402 v2 PAYMENT-SIGNATURE header.",
+            description: "x402 payment header.",
           },
         },
         required: ["issuer"],
@@ -60,7 +54,7 @@ export const vault: ServiceDef = {
         properties: {
           days: {
             type: "integer",
-            description: "Trailing day count (1-90). Default 30.",
+            description: "Trailing days.",
             minimum: 1,
             maximum: 90,
             default: 30,

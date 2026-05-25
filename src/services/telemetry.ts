@@ -38,7 +38,7 @@ export const telemetry: ServiceDef = {
         properties: {
           payment_signature: {
             type: "string",
-            description: "x402 v2 PAYMENT-SIGNATURE header.",
+            description: "x402 payment header.",
           },
         },
         additionalProperties: false,
@@ -76,7 +76,7 @@ export const telemetry: ServiceDef = {
         properties: {
           invoice_id: {
             type: "string",
-            description: "Invoice id from the /quote response.",
+            description: "Invoice id from get_quote.",
           },
         },
         required: ["invoice_id"],
@@ -133,7 +133,7 @@ export const telemetry: ServiceDef = {
         properties: {
           hours: {
             type: "integer",
-            description: "Trailing hour count (1-720). Default 168 (7 days).",
+            description: "Trailing hours. Default 168 (7d).",
             minimum: 1,
             maximum: 720,
             default: 168,
@@ -156,7 +156,7 @@ export const telemetry: ServiceDef = {
         properties: {
           pair: {
             type: "string",
-            description: "Optional pair filter (e.g. 'XRP/RLUSD'). Omit for all tracked pairs.",
+            description: "Pair filter, e.g. 'XRP/RLUSD'. Omit for all.",
           },
         },
         additionalProperties: false,

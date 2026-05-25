@@ -39,7 +39,7 @@ export const trust: ServiceDef = {
           },
           payment_signature: {
             type: "string",
-            description: "x402 v2 PAYMENT-SIGNATURE header.",
+            description: "x402 payment header.",
           },
         },
         additionalProperties: false,
@@ -59,13 +59,12 @@ export const trust: ServiceDef = {
         properties: {
           domain_id: {
             type: "string",
-            description:
-              "64-character hex LedgerIndex of the PermissionedDomain object.",
+            description: "64-hex LedgerIndex of the domain.",
             pattern: "^[A-Fa-f0-9]{64}$",
           },
           payment_signature: {
             type: "string",
-            description: "x402 v2 PAYMENT-SIGNATURE header.",
+            description: "x402 payment header.",
           },
         },
         required: ["domain_id"],
@@ -86,7 +85,7 @@ export const trust: ServiceDef = {
         properties: {
           payment_signature: {
             type: "string",
-            description: "x402 v2 PAYMENT-SIGNATURE header.",
+            description: "x402 payment header.",
           },
         },
         additionalProperties: false,
@@ -106,9 +105,7 @@ export const trust: ServiceDef = {
         properties: {
           since: {
             type: "string",
-            description:
-              "Event-id cursor (e.g. 'trust_lifecycle_42'); only events " +
-              "after this id are returned. Optional.",
+            description: "Event-id cursor, e.g. 'trust_lifecycle_42'.",
           },
           limit: {
             type: "integer",
@@ -118,13 +115,11 @@ export const trust: ServiceDef = {
           },
           tx_type: {
             type: "string",
-            description:
-              "Comma-separated filter on TransactionType (e.g. " +
-              "'PermissionedDomainSet,CredentialCreate'). Optional.",
+            description: "Comma-separated TransactionType filter.",
           },
           payment_signature: {
             type: "string",
-            description: "x402 v2 PAYMENT-SIGNATURE header.",
+            description: "x402 payment header.",
           },
         },
         additionalProperties: false,
@@ -155,7 +150,7 @@ export const trust: ServiceDef = {
           },
           status: {
             type: "string",
-            description: "Filter on operator_status (all|active|proposed). Default 'all'.",
+            description: "all|active|proposed.",
             default: "all",
           },
         },
@@ -176,7 +171,7 @@ export const trust: ServiceDef = {
         properties: {
           owner_address: {
             type: "string",
-            description: "XRPL classic address of the operator (r-prefix).",
+            description: "XRPL r-address of the operator.",
           },
         },
         required: ["owner_address"],
@@ -197,7 +192,7 @@ export const trust: ServiceDef = {
         properties: {
           operator_address: {
             type: "string",
-            description: "XRPL classic address of the PD operator (r-prefix).",
+            description: "XRPL r-address of the operator.",
           },
         },
         required: ["operator_address"],
@@ -218,10 +213,10 @@ export const trust: ServiceDef = {
         properties: {
           window_days: {
             type: "integer",
+            description: "Trailing days.",
             minimum: 1,
             maximum: 365,
             default: 30,
-            description: "Aggregation window in days. Default 30.",
           },
         },
         additionalProperties: false,

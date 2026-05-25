@@ -28,16 +28,12 @@ export const sentinel: ServiceDef = {
         properties: {
           address: {
             type: "string",
-            description: "XRPL classic address (r-prefixed, base58).",
+            description: "XRPL r-address.",
             pattern: "^r[1-9A-HJ-NP-Za-km-z]{24,34}$",
           },
           payment_signature: {
             type: "string",
-            description:
-              "x402 v2 PAYMENT-SIGNATURE header (base64-encoded JSON of a " +
-              "signed XRPL Payment matching one of the requirements returned " +
-              "by an initial unauthenticated probe). Omit for free " +
-              "marketing-site preview, supply for the paid agent path.",
+            description: "x402 payment header.",
           },
         },
         required: ["address"],
@@ -59,12 +55,12 @@ export const sentinel: ServiceDef = {
         properties: {
           address: {
             type: "string",
-            description: "XRPL classic address.",
+            description: "XRPL r-address.",
             pattern: "^r[1-9A-HJ-NP-Za-km-z]{24,34}$",
           },
           payment_signature: {
             type: "string",
-            description: "x402 v2 PAYMENT-SIGNATURE header.",
+            description: "x402 payment header.",
           },
         },
         required: ["address"],

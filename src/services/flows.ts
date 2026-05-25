@@ -28,14 +28,11 @@ export const flows: ServiceDef = {
         properties: {
           ticker: {
             type: "string",
-            description:
-              "ETF ticker (case-insensitive). One of XRP, XRPC, XRPZ, " +
-              "GXRP, TOXR, XRPR. Returns 404 when the ticker is not " +
-              "in the operator-curated registry.",
+            description: "ETF ticker, e.g. XRP, XRPC, GXRP.",
           },
           payment_signature: {
             type: "string",
-            description: "x402 v2 PAYMENT-SIGNATURE header.",
+            description: "x402 payment header.",
           },
         },
         required: ["ticker"],
@@ -58,10 +55,10 @@ export const flows: ServiceDef = {
         properties: {
           days: {
             type: "integer",
+            description: "Trailing days.",
             minimum: 1,
             maximum: 90,
             default: 30,
-            description: "Days of history to return (1-90, default 30).",
           },
         },
         additionalProperties: false,
@@ -81,17 +78,17 @@ export const flows: ServiceDef = {
         properties: {
           window_days: {
             type: "integer",
+            description: "Trailing days.",
             minimum: 1,
             maximum: 365,
             default: 30,
-            description: "Trailing window in UTC days.",
           },
           top_corridors: {
             type: "integer",
+            description: "Max corridors returned.",
             minimum: 1,
             maximum: 200,
             default: 20,
-            description: "Cap on the top_corridors[] list.",
           },
         },
         additionalProperties: false,
