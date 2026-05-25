@@ -172,6 +172,7 @@ export const trust: ServiceDef = {
           owner_address: {
             type: "string",
             description: "XRPL r-address of the operator.",
+            pattern: "^r[1-9A-HJ-NP-Za-km-z]{24,34}$",
           },
         },
         required: ["owner_address"],
@@ -193,6 +194,7 @@ export const trust: ServiceDef = {
           operator_address: {
             type: "string",
             description: "XRPL r-address of the operator.",
+            pattern: "^r[1-9A-HJ-NP-Za-km-z]{24,34}$",
           },
         },
         required: ["operator_address"],

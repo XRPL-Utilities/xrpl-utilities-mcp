@@ -77,6 +77,7 @@ export const pulse: ServiceDef = {
           address: {
             type: "string",
             description: "XRPL r-address.",
+            pattern: "^r[1-9A-HJ-NP-Za-km-z]{24,34}$",
           },
           limit: {
             type: "integer",
