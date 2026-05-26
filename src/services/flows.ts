@@ -112,5 +112,26 @@ export const flows: ServiceDef = {
       path: "/stats/launch-impact",
       authMode: "free",
     },
+    {
+      name: "xrpl_flows_etf_flow_summary",
+      description:
+        "Free. " +
+        "Daily ETF flow summary: per-ticker AUM with day-over-day delta, growth rate, " +
+        "and aggregate XRP supply share.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          days: {
+            type: "integer",
+            description: "Lookback window in days (default 7, max 90).",
+            default: 7,
+          },
+        },
+        additionalProperties: false,
+      },
+      method: "GET",
+      path: "/stats/etf-flow-summary",
+      authMode: "free",
+    },
   ],
 };

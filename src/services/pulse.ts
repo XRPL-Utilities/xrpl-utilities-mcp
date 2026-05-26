@@ -276,5 +276,62 @@ export const pulse: ServiceDef = {
       path: "/stats/rwa-summary",
       authMode: "free",
     },
+    {
+      name: "xrpl_pulse_exchange_net_flow",
+      description:
+        "Free. " +
+        "Per-exchange directional net flow from labeled whale events. " +
+        "Inflow/outflow/net per named exchange with trend and market positioning flag.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          hours: {
+            type: "integer",
+            description: "Lookback window in hours (default 24, max 336 = 14 days).",
+            default: 24,
+          },
+        },
+        additionalProperties: false,
+      },
+      method: "GET",
+      path: "/stats/exchange-net-flow",
+      authMode: "free",
+    },
+    {
+      name: "xrpl_pulse_escrow_calendar",
+      description:
+        "Free. " +
+        "Forward-looking Ripple XRP escrow release calendar with monthly unlock " +
+        "schedule, relock history, and net release rate.",
+      inputSchema: {
+        type: "object",
+        properties: {},
+        additionalProperties: false,
+      },
+      method: "GET",
+      path: "/stats/escrow-calendar",
+      authMode: "free",
+    },
+    {
+      name: "xrpl_pulse_entity_positioning",
+      description:
+        "Free. " +
+        "Per-entity (exchange, treasury, MM) accumulation vs distribution scoring " +
+        "from labeled whale events with daily breakdown.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          days: {
+            type: "integer",
+            description: "Lookback window in days (default 7, max 90).",
+            default: 7,
+          },
+        },
+        additionalProperties: false,
+      },
+      method: "GET",
+      path: "/stats/entity-positioning",
+      authMode: "free",
+    },
   ],
 };
