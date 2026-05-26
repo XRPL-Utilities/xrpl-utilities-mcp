@@ -334,7 +334,7 @@ export const pulse: ServiceDef = {
       authMode: "free",
     },
     {
-      name: "xrpl_desk_morning_briefing",
+      name: "xrpl_desk_briefing",
       description:
         "Free. " +
         "Composite desk briefing: market posture, headline narrative, positioning " +
