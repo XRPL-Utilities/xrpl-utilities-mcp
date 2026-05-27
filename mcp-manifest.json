@@ -1,6 +1,6 @@
 {
   "name": "@xrpl-utilities/mcp",
-  "version": "0.2.121",
+  "version": "0.2.124",
   "description": "Model Context Protocol server for XRPL-Utilities. 39 tools across 6 XRPL on-chain data services (Sentinel, Pulse, Telemetry, Trust, Vault, Flows). Stateless passthrough to x402-payable and free APIs. Hosted at mcp.xrpl-utilities.io.",
   "provider": "XRPL-Utilities LLC",
   "homepage": "https://xrpl-utilities.com",
@@ -453,7 +453,7 @@
       }
     },
     {
-      "name": "xrpl_desk_morning_briefing",
+      "name": "xrpl_desk_briefing",
       "description": "Free. Composite desk briefing: market posture, headline narrative, positioning (top accumulator/distributor + reversals), RLUSD health (velocity + growth + peg), supply pressure (escrow + relock), RWA market, whale activity, and alerts. One call replaces 6-8 separate tool calls.",
       "inputSchema": {
         "type": "object",
