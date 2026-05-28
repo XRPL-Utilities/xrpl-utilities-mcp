@@ -19,6 +19,13 @@
 // Run locally:  npm run build && node scripts/contract_scrub.mjs
 
 import { SERVICES, ALL_TOOLS } from "../dist/services/index.js";
+import { readFileSync, writeFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const REPO_ROOT = resolve(__dirname, "..");
 
 const TIMEOUT_MS = 15_000;
 
@@ -124,6 +131,7 @@ async function checkAgentsJson(service) {
     const live = body.schema_version;
     if (!live) return bad(label, "missing schema_version");
     if (!service.knownSchemaVersions.includes(live)) {
+      schemaFixes.push({ serviceId: service.id, addVersion: live });
       return bad(label, `live schema ${live} not in MCP knownSchemaVersions[last=${service.knownSchemaVersions.at(-1)}] — bump src/services/${service.id}.ts`);
     }
     ok(`${label} schema=${live}`);
@@ -181,8 +189,15 @@ async function checkTool(tool) {
   }
 }
 
-// Cross-service edges: places where one service hard-codes a field name
-// from another. Update this list when you wire a new service call.
+// --auto-fix mode rewrites the one class of drift that needs no judgment:
+// when a backend's live schema_version isn't yet in the MCP service's
+// knownSchemaVersions array, append it. Live value is canonical. All
+// other drift classes (auth-mode mismatch, missing fields, 5xx, etc.)
+// require a human decision and are never touched.
+const AUTO_FIX = process.argv.includes("--auto-fix");
+const schemaFixes = []; // { serviceId, addVersion } collected during the run
+
+
 const CROSS_SERVICE_EDGES = [
   {
     label: "Pulse briefing.py -> Telemetry /settlement/totals",
@@ -296,8 +311,45 @@ async function main() {
   if (fail > 0) {
     console.log(`\nFailures:`);
     for (const f of failures) console.log(`  - ${f}`);
-    process.exit(1);
   }
+
+  if (AUTO_FIX && schemaFixes.length > 0) {
+    console.log(`\n== Auto-fix: appending ${schemaFixes.length} schema version(s) ==`);
+    const applied = [];
+    for (const { serviceId, addVersion } of schemaFixes) {
+      const filePath = resolve(REPO_ROOT, `src/services/${serviceId}.ts`);
+      try {
+        const before = readFileSync(filePath, "utf8");
+        const re = /(knownSchemaVersions:\s*\[)([^\]]*)(\])/;
+        const m = before.match(re);
+        if (!m) {
+          console.log(`  ! ${serviceId}: knownSchemaVersions array not found`);
+          continue;
+        }
+        const arr = m[2];
+        if (arr.includes(`"${addVersion}"`)) {
+          console.log(`  ! ${serviceId}: ${addVersion} already in array, skipping`);
+          continue;
+        }
+        const after = before.replace(re, `$1$2, "${addVersion}"$3`);
+        writeFileSync(filePath, after);
+        applied.push({ serviceId, addVersion, filePath });
+        console.log(`  + ${serviceId}: appended ${addVersion}`);
+      } catch (e) {
+        console.log(`  ! ${serviceId}: ${e.message}`);
+      }
+    }
+    if (applied.length > 0) {
+      // Write a summary file the GH Action wraps into PR body
+      const summary = applied.map(a => `- ${a.serviceId}: knownSchemaVersions += "${a.addVersion}"`).join("\n");
+      writeFileSync(resolve(REPO_ROOT, ".auto-fix-summary.txt"), summary + "\n");
+      console.log(`\nWrote .auto-fix-summary.txt — GH Action picks this up for the PR body.`);
+      // Exit 2 = "drift was found and auto-fixed; please open a PR"
+      process.exit(2);
+    }
+  }
+
+  if (fail > 0) process.exit(1);
   process.exit(0);
 }
 

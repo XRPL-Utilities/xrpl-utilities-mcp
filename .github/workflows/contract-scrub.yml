@@ -38,15 +38,49 @@ jobs:
           cache: "npm"
       - run: npm ci
       - run: npm run build
-      - name: Run scrubber
+      - name: Run scrubber (with auto-fix)
         id: scrub
         run: |
           set +e
-          node scripts/contract_scrub.mjs > scrub.log 2>&1
+          # Exit codes:
+          #   0 = all PASS
+          #   1 = drift found, none auto-fixable
+          #   2 = drift found, schema-version fixes applied to working tree
+          node scripts/contract_scrub.mjs --auto-fix > scrub.log 2>&1
           echo "exit=$?" >> $GITHUB_OUTPUT
           cat scrub.log
+      - name: Open auto-fix PR (schema-version sync)
+        if: steps.scrub.outputs.exit == '2'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          BRANCH="auto-fix/schema-sync-$(date -u +%Y%m%d)"
+          # If a branch from an earlier run today already exists, force-update it
+          git checkout -B "$BRANCH"
+          git add src/services/
+          git commit -m "fix: auto-sync knownSchemaVersions with live backends
+
+Scrubber detected one or more backend schema_versions not yet listed in
+the MCP service's knownSchemaVersions array. Live value is canonical;
+this is a mechanical append.
+
+$(cat .auto-fix-summary.txt)"
+          git push --force origin "$BRANCH"
+          # Open PR (or no-op if one already exists from today)
+          gh pr create \
+            --title "auto-fix: schema-version sync" \
+            --body "Mechanical fix from the daily contract scrubber. Review + merge to clear the drift.
+
+$(cat .auto-fix-summary.txt)
+
+_Auto-generated; safe to merge if the live backends are the canonical source of truth._" \
+            --base main \
+            --head "$BRANCH" || echo "PR already exists for $BRANCH"
       - name: Open / update drift issue on failure
-        if: steps.scrub.outputs.exit != '0'
+        if: steps.scrub.outputs.exit == '1'
         uses: actions/github-script@v7
         with:
           script: |
@@ -75,6 +109,6 @@ jobs:
                 body: `Daily scrubber failed. Recent log:\n\n${body}\n\n_Re-run will append a comment; close this issue when fixed and the next clean run won't reopen it._`,
               });
             }
-      - name: Fail the job on scrub failure
-        if: steps.scrub.outputs.exit != '0'
+      - name: Fail the job on un-fixable drift
+        if: steps.scrub.outputs.exit == '1'
         run: exit 1

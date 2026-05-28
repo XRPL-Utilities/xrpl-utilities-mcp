@@ -97,7 +97,7 @@ export const trust: ServiceDef = {
     {
       name: "xrpl_trust_recent_events",
       description:
-        "Paid ($0.10 USD). " +
+        "Free. " +
         "XLS-70/80/81 lifecycle event stream: domain creates/deletes, credential " +
         "activity, permissioned offers and AMM events. Cursor-paginated.",
       inputSchema: {
@@ -117,16 +117,12 @@ export const trust: ServiceDef = {
             type: "string",
             description: "Comma-separated TransactionType filter.",
           },
-          payment_signature: {
-            type: "string",
-            description: "x402 payment header.",
-          },
         },
         additionalProperties: false,
       },
       method: "GET",
       path: "/events",
-      authMode: "inline_x402",
+      authMode: "free",
     },
     {
       name: "xrpl_trust_list_operators_index",
