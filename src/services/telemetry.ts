@@ -25,7 +25,7 @@ export const telemetry: ServiceDef = {
   label: "XR-Telemetry",
   baseUrl: "https://telemetry.xrpl-utilities.io",
   manifestUrl: "https://telemetry.xrpl-utilities.io/agents.json",
-  knownSchemaVersions: ["1.2.0", "1.3.0", "1.4.0", "1.4.1", "1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.11.1", "1.11.2", "1.12.0", "1.13.0", "1.14.0", "1.15.0", "1.16.0", "1.17.0", "1.18.0", "1.19.0"],
+  knownSchemaVersions: ["1.2.0", "1.3.0", "1.4.0", "1.4.1", "1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.11.1", "1.11.2", "1.12.0", "1.13.0", "1.14.0", "1.15.0", "1.16.0", "1.17.0", "1.18.0", "1.19.0", "1.20.0"],
   tools: [
     {
       name: "xrpl_telemetry_snapshot",
@@ -126,17 +126,23 @@ export const telemetry: ServiceDef = {
       name: "xrpl_telemetry_settlement_series",
       description:
         "Free. " +
-        "Per-hour XRPL settlement volume time-series stacked by currency (XRP, RLUSD) " +
-        "with payment counts. For charting or change-point detection.",
+        "Bucketed XRPL settlement volume time-series (daily / weekly / monthly) " +
+        "with USD totals, payment counts, XRP drops, and RLUSD value per bucket. " +
+        "Newest first, UTC-aligned. For charting or change-point detection.",
       inputSchema: {
         type: "object",
         properties: {
-          hours: {
+          bucket: {
+            type: "string",
+            enum: ["daily", "weekly", "monthly"],
+            description: "Bucket granularity.",
+            default: "daily",
+          },
+          count: {
             type: "integer",
-            description: "Trailing hours. Default 168 (7d).",
+            description: "Number of buckets, newest first. Default 30 (daily) / 12 (weekly/monthly).",
             minimum: 1,
-            maximum: 720,
-            default: 168,
+            maximum: 366,
           },
         },
         additionalProperties: false,
