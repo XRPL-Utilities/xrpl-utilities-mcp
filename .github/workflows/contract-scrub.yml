@@ -28,8 +28,9 @@ jobs:
   scrub:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      issues: write
+      contents: write       # auto-fix path pushes a branch
+      issues: write         # drift-found path opens / comments on the contract-drift Issue
+      pull-requests: write  # auto-fix path runs `gh pr create`
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
