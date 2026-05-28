@@ -159,7 +159,7 @@ export const trust: ServiceDef = {
     {
       name: "xrpl_trust_operator_drilldown",
       description:
-        "Free. " +
+        "Paid ($0.10 USD). " +
         "Deep dive on one PermissionedDomain operator: domains, credentials, " +
         "jurisdiction, DID identity, institutional issuers, and lifecycle events.",
       inputSchema: {
@@ -170,13 +170,17 @@ export const trust: ServiceDef = {
             description: "XRPL r-address of the operator.",
             pattern: "^r[1-9A-HJ-NP-Za-km-z]{24,34}$",
           },
+          payment_signature: {
+            type: "string",
+            description: "x402 payment header.",
+          },
         },
         required: ["owner_address"],
         additionalProperties: false,
       },
       method: "GET",
       path: "/permissioned-domains/operators/{owner_address}",
-      authMode: "free",
+      authMode: "inline_x402",
     },
     {
       name: "xrpl_trust_operator_attribution",

@@ -106,7 +106,8 @@ function synthesizeArgs(schema) {
 }
 
 // Tools that require an input the schema doesn't default — provide one
-// here so the scrubber can issue a sensible request.
+// here so the scrubber can issue a sensible request. Some are populated
+// dynamically by discoverFixtures() before the tool loop runs.
 const TOOL_ARG_OVERRIDES = {
   // Stateful invoice polling — no fixture; covered by the paid /scan check
   // on the same service.
@@ -114,13 +115,63 @@ const TOOL_ARG_OVERRIDES = {
   xrpl_telemetry_get_results: { __skip: "stateful invoice poll, no fixture" },
   xrpl_pulse_get_status: { __skip: "stateful invoice poll, no fixture" },
   xrpl_pulse_get_results: { __skip: "stateful invoice poll, no fixture" },
-  // Path-param tools without a deterministic fixture. Skipped here; the
-  // free index/list endpoint of the same service validates the listing
-  // is alive.
-  xrpl_trust_get_domain: { __skip: "needs real 64-hex domain_id fixture" },
-  xrpl_trust_operator_drilldown: { __skip: "needs real operator address fixture" },
-  xrpl_trust_operator_attribution: { __skip: "needs real operator address fixture" },
+  // Trust path-param tools are populated by discoverFixtures() from the
+  // free index/event endpoints. If discovery fails, the __skip is set
+  // there so the scrubber surfaces a clear reason instead of a 404.
 };
+
+// Pulls live values off free endpoints so the scrubber can exercise tools
+// that take an opaque path param (domain_id, operator address). Self-
+// maintaining: no hardcoded addresses to rot. If a discovery step fails
+// the affected tool falls back to SKIP with a clear reason.
+async function discoverFixtures() {
+  console.log("== Discovering fixtures from free endpoints ==");
+
+  // Trust operator address — first row of the free operator index
+  try {
+    const { status, body } = await fetchJson(
+      "https://trust.xrpl-utilities.io/permissioned-domains/operators/index?limit=1"
+    );
+    const op = body?.operators?.[0]?.operator_address;
+    if (status === 200 && op) {
+      TOOL_ARG_OVERRIDES.xrpl_trust_operator_drilldown = { owner_address: op };
+      TOOL_ARG_OVERRIDES.xrpl_trust_operator_attribution = { operator_address: op };
+      console.log(`  + operator_address = ${op}`);
+    } else {
+      const reason = `discovery failed (operators index status=${status})`;
+      TOOL_ARG_OVERRIDES.xrpl_trust_operator_drilldown = { __skip: reason };
+      TOOL_ARG_OVERRIDES.xrpl_trust_operator_attribution = { __skip: reason };
+      console.log(`  ! operator_address: ${reason}`);
+    }
+  } catch (e) {
+    const reason = `discovery exception: ${e.message || e}`;
+    TOOL_ARG_OVERRIDES.xrpl_trust_operator_drilldown = { __skip: reason };
+    TOOL_ARG_OVERRIDES.xrpl_trust_operator_attribution = { __skip: reason };
+    console.log(`  ! operator_address: ${reason}`);
+  }
+
+  // Trust domain_id — first event in /events with a non-null domain_id
+  try {
+    const { status, body } = await fetchJson(
+      "https://trust.xrpl-utilities.io/events?limit=50"
+    );
+    const evs = Array.isArray(body?.events) ? body.events : [];
+    const ev = evs.find((e) => e?.domain_id);
+    if (status === 200 && ev?.domain_id) {
+      TOOL_ARG_OVERRIDES.xrpl_trust_get_domain = { domain_id: ev.domain_id };
+      console.log(`  + domain_id      = ${ev.domain_id}`);
+    } else {
+      const reason = `discovery found no domain_id in /events (status=${status}, events=${evs.length})`;
+      TOOL_ARG_OVERRIDES.xrpl_trust_get_domain = { __skip: reason };
+      console.log(`  ! domain_id: ${reason}`);
+    }
+  } catch (e) {
+    const reason = `discovery exception: ${e.message || e}`;
+    TOOL_ARG_OVERRIDES.xrpl_trust_get_domain = { __skip: reason };
+    console.log(`  ! domain_id: ${reason}`);
+  }
+  console.log("");
+}
 
 async function checkAgentsJson(service) {
   const label = `agents.json :: ${service.id}`;
@@ -296,7 +347,10 @@ async function main() {
     await checkAgentsJson(s);
   }
 
-  console.log("\n== MCP tool endpoints ==");
+  console.log("");
+  await discoverFixtures();
+
+  console.log("== MCP tool endpoints ==");
   for (const tool of ALL_TOOLS) {
     await checkTool(tool);
   }
