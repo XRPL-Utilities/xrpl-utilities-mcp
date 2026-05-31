@@ -62,22 +62,31 @@ jobs:
           # If a branch from an earlier run today already exists, force-update it
           git checkout -B "$BRANCH"
           git add src/services/
-          git commit -m "fix: auto-sync knownSchemaVersions with live backends
-
-Scrubber detected one or more backend schema_versions not yet listed in
-the MCP service's knownSchemaVersions array. Live value is canonical;
-this is a mechanical append.
-
-$(cat .auto-fix-summary.txt)"
+          # Build the commit message in a file so the multi-line body stays
+          # inside the YAML block scalar (embedding raw newlines in -m "..."
+          # dedents out of the block and breaks workflow parsing).
+          {
+            echo "fix: auto-sync knownSchemaVersions with live backends"
+            echo
+            echo "Scrubber detected one or more backend schema_versions not yet listed in"
+            echo "the MCP service's knownSchemaVersions array. Live value is canonical;"
+            echo "this is a mechanical append."
+            echo
+            cat .auto-fix-summary.txt
+          } > /tmp/commit-msg.txt
+          git commit -F /tmp/commit-msg.txt
           git push --force origin "$BRANCH"
           # Open PR (or no-op if one already exists from today)
+          {
+            echo "Mechanical fix from the daily contract scrubber. Review + merge to clear the drift."
+            echo
+            cat .auto-fix-summary.txt
+            echo
+            echo "_Auto-generated; safe to merge if the live backends are the canonical source of truth._"
+          } > /tmp/pr-body.txt
           gh pr create \
             --title "auto-fix: schema-version sync" \
-            --body "Mechanical fix from the daily contract scrubber. Review + merge to clear the drift.
-
-$(cat .auto-fix-summary.txt)
-
-_Auto-generated; safe to merge if the live backends are the canonical source of truth._" \
+            --body-file /tmp/pr-body.txt \
             --base main \
             --head "$BRANCH" || echo "PR already exists for $BRANCH"
       - name: Open / update drift issue on failure
