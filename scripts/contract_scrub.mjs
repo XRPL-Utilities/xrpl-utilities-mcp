@@ -339,6 +339,46 @@ async function checkEdge(edge) {
   }
 }
 
+// Cross-product registry drift: Sentinel's VERIFIED_INSTITUTIONAL_ENTITY
+// keystone fires on membership in a vendored RWA-issuer registry. That set
+// must stay a superset of the canonical Pulse RWA issuer map, or a newly
+// tracked issuer would under-score on Sentinel posture. We assert one
+// direction only (every Pulse issuer wallet is in Sentinel's registry);
+// Sentinel may legitimately carry extra institutions Pulse doesn't track.
+async function checkRwaRegistryDrift() {
+  const label = "registry-drift :: Sentinel rwa_registry <- Pulse rwa-summary";
+  try {
+    const sentinel = await fetchJson("https://sentinel.xrpl-utilities.io/registry/rwa-issuers");
+    const pulse = await fetchJson("https://pulse.xrpl-utilities.io/stats/rwa-summary");
+    if (sentinel.status !== 200) return bad(label, `Sentinel registry HTTP ${sentinel.status}`);
+    if (pulse.status !== 200) return bad(label, `Pulse rwa-summary HTTP ${pulse.status}`);
+    const registry = new Set(
+      (sentinel.body?.wallets || []).map((w) => w.address).filter(Boolean)
+    );
+    if (registry.size === 0) return bad(label, "Sentinel registry returned no wallets");
+    const issuers = pulse.body?.issuers;
+    if (!Array.isArray(issuers) || issuers.length === 0) {
+      return bad(label, "Pulse rwa-summary returned no issuers");
+    }
+    // Distinct Pulse issuer wallets missing from Sentinel's registry.
+    const missing = [...new Set(
+      issuers.map((i) => i.wallet).filter((w) => w && !registry.has(w))
+    )];
+    if (missing.length > 0) {
+      const detail = missing
+        .map((w) => {
+          const row = issuers.find((i) => i.wallet === w);
+          return `${w} (${row?.logical_label || row?.label || "?"})`;
+        })
+        .join(", ");
+      return bad(label, `${missing.length} Pulse issuer wallet(s) missing from Sentinel registry: ${detail}`);
+    }
+    ok(`${label} (${registry.size} registry / ${issuers.length} pulse rows, no drift)`);
+  } catch (e) {
+    bad(label, e.message || String(e));
+  }
+}
+
 async function main() {
   console.log(`Contract scrub at ${new Date().toISOString()}\n`);
 
@@ -359,6 +399,9 @@ async function main() {
   for (const edge of CROSS_SERVICE_EDGES) {
     await checkEdge(edge);
   }
+
+  console.log("\n== Cross-product registry drift ==");
+  await checkRwaRegistryDrift();
 
   console.log(`\n----------------------------------------`);
   console.log(`Total: ${pass} pass, ${fail} fail`);
