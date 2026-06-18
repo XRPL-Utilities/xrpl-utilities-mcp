@@ -33,6 +33,20 @@ HTTP 402 from https://sentinel.xrpl-utilities.io/scan
 XRPL payment, retry, and return the scan result plus the on-chain settlement
 reference. The seed is read only from `XRPL_PAYER_SEED` and is never persisted.
 
+### Verified live (mainnet)
+
+```
+Agent wallet: rPA4bdQUHJsFS3p67tTyuzhtCU7EUnB5hq
+Paid + scanned rHuiXXjHLpMP8ZE9sSQU5aADQVWDwv6h5p:
+  activity_score: 45 (Medium)
+  signals: PASSIVE_COUNTERPARTY, PERMISSIONED_ISSUER_GOVERNANCE, ...
+  settled on XRPL: tx 08AF105FB1EB2CDD189843AAB14B1E059252DCA0EC46715FD0070ABFBA5D6D6D
+```
+
+That settlement is a real validated `Payment` of 0.08773 XRP to the Sentinel
+treasury — [view on XRPScan](https://xrpscan.com/tx/08AF105FB1EB2CDD189843AAB14B1E059252DCA0EC46715FD0070ABFBA5D6D6D).
+No human in the loop: 402 → presigned XRPL payment → t54 verify+settle → data.
+
 Every XR-* service (Sentinel, Pulse, Telemetry, Trust, Vault, Flows) speaks the
 same x402 flow, so the same pattern pays any of them — or use the
 [MCP server](https://www.npmjs.com/package/@xrpl-utilities/mcp), which wraps the
