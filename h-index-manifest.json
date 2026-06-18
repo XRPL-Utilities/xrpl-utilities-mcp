@@ -1,0 +1,41 @@
+{
+  "name": "@xrpl-utilities/mcp",
+  "title": "XRPL-Utilities",
+  "version": "0.2.153",
+  "description": "XRPL on-chain data tools for AI agents: wallet classifier, signal feed, supply/utility-floor telemetry, XLS-70/80/81 trust directory, RWA tracker, and ETF-flow correlation. Stateless passthrough; paid tools settle via x402 (caller supplies the payment header).",
+  "provider": "XRPL-Utilities LLC",
+  "license": "MIT",
+  "homepage": "https://xrpl-utilities.com",
+  "repository": "https://github.com/XRPL-Utilities/xrpl-utilities-mcp",
+  "npm": "https://www.npmjs.com/package/@xrpl-utilities/mcp",
+  "registry": "https://registry.modelcontextprotocol.io/servers/io.github.XRPL-Utilities/mcp",
+  "categories": ["finance", "blockchain", "data"],
+  "keywords": ["xrpl", "xrp", "rlusd", "x402", "ai-agents", "on-chain-data"],
+  "transports": {
+    "stdio": {
+      "command": "npx",
+      "args": ["-y", "@xrpl-utilities/mcp"]
+    },
+    "http": {
+      "type": "streamable-http",
+      "url": "https://mcp.xrpl-utilities.io/mcp"
+    }
+  },
+  "payment": {
+    "model": "x402",
+    "note": "Free tools need no auth. Paid tools require an x402 payment header supplied by the caller; the server holds no funds and adds no markup."
+  },
+  "tools": {
+    "total": 41,
+    "free": 26,
+    "paid": 15
+  },
+  "services": [
+    { "id": "sentinel",  "label": "XR-Sentinel",  "summary": "Wallet/address activity classifier",        "tools": 2,  "free": 0,  "paid": 2 },
+    { "id": "pulse",     "label": "XR-Pulse",      "summary": "XRPL signal feed + exchange/entity flow",    "tools": 16, "free": 13, "paid": 3 },
+    { "id": "telemetry", "label": "XR-Telemetry",  "summary": "Supply, active float, utility floor",        "tools": 7,  "free": 3,  "paid": 4 },
+    { "id": "trust",     "label": "XR-Trust",      "summary": "XLS-70/80/81 permissioned-domain directory", "tools": 9,  "free": 5,  "paid": 4 },
+    { "id": "vault",     "label": "XR-Vault",      "summary": "XRPL RWA issuer/asset tracker",              "tools": 2,  "free": 1,  "paid": 1 },
+    { "id": "flows",     "label": "XR-Flows",      "summary": "Spot-XRP ETF AUM vs XRPL flow correlation",  "tools": 5,  "free": 4,  "paid": 1 }
+  ]
+}
