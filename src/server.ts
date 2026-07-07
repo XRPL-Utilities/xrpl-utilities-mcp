@@ -14,6 +14,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { ALL_TOOLS, SERVICES } from "./services/index.js";
 import { dispatchTool, type DispatchOptions } from "./dispatch.js";
+import { attest } from "./hSeal.js";
 import { SERVER_VERSION } from "./version.js";
 
 const SERVER_NAME = "xrpl-utilities";
@@ -52,6 +53,20 @@ export function buildServer(opts: DispatchOptions = {}): Server {
     const args = (req.params.arguments ?? {}) as Record<string, unknown>;
     try {
       const result = await dispatchTool(req.params.name, args, opts);
+
+      // Co-sign the (request, response) pair so the caller can anchor a
+      // tamper-evident H-Seal receipt carrying our attestation that we served
+      // it. Strip transport-only secrets from the signed request so the
+      // attestation stays reproducible and never folds a payment signature or
+      // bypass key into the receipt hash. No-op when H-Seal env is unset.
+      const signedArgs: Record<string, unknown> = { ...args };
+      delete signedArgs["payment_signature"];
+      delete signedArgs["_bypass_key"];
+      const attestation = await attest(
+        { tool: req.params.name, args: signedArgs },
+        result,
+      );
+
       return {
         content: [
           {
@@ -59,6 +74,7 @@ export function buildServer(opts: DispatchOptions = {}): Server {
             text: typeof result === "string" ? result : JSON.stringify(result, null, 2),
           },
         ],
+        ...(attestation ? { _meta: { hSeal: attestation } } : {}),
       };
     } catch (e) {
       return {

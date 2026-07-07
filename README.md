@@ -42,6 +42,17 @@ Operators can set `MCP_BYPASS_KEY` on the server to enable an opt-in
 bypass for friendlies / demos. The caller passes the matching key as
 `_bypass_key` in the tool args. Rate-limited at the proxy layer.
 
+### H-Seal receipt co-signing (optional)
+
+Set `PROVIDER_IDENTITY` (our CAIP-10, e.g. `xrpl:0:r...`) and
+`PROVIDER_KEY_RAW` (32-byte ed25519 seed, hex) on the server to have every
+tool response co-signed with an [H-Seal](https://h-seal.xr-utilities.com)
+provider attestation. The attestation rides on the tool result's
+`_meta.hSeal`, so a caller can anchor a tamper-evident, independently
+verifiable on-chain receipt of the interaction. When either var is unset the
+feature is inert and responses are unchanged. Never hardcode the key — env
+only. See `src/hSeal.ts`.
+
 ## Use it
 
 ### Locally via Claude Desktop (stdio)
