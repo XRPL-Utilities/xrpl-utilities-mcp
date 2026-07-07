@@ -15,6 +15,7 @@ import {
 import { ALL_TOOLS, SERVICES } from "./services/index.js";
 import { dispatchTool, type DispatchOptions } from "./dispatch.js";
 import { attest } from "./hSeal.js";
+import { buildReceipt, type HSealReceiptResult } from "./hSealReceipt.js";
 import { SERVER_VERSION } from "./version.js";
 
 const SERVER_NAME = "xrpl-utilities";
@@ -52,7 +53,9 @@ export function buildServer(opts: DispatchOptions = {}): Server {
   server.setRequestHandler(CallToolRequestSchema, async (req) => {
     const args = (req.params.arguments ?? {}) as Record<string, unknown>;
     try {
+      const startedMs = Date.now();
       const result = await dispatchTool(req.params.name, args, opts);
+      const endedMs = Date.now();
 
       // Co-sign the (request, response) pair so the caller can anchor a
       // tamper-evident H-Seal receipt carrying our attestation that we served
@@ -62,19 +65,41 @@ export function buildServer(opts: DispatchOptions = {}): Server {
       const signedArgs: Record<string, unknown> = { ...args };
       delete signedArgs["payment_signature"];
       delete signedArgs["_bypass_key"];
+
+      // If the backend co-signed its OWN output (returned `hSealAttestation`),
+      // build a 2-party receipt: caller = this MCP, provider = that backend.
+      // Split it out of the displayed result and into _meta.hSealReceipt.
+      let displayResult: unknown = result;
+      let hSealReceipt: HSealReceiptResult | undefined;
+      if (result && typeof result === "object" && "hSealAttestation" in result) {
+        const { hSealAttestation, ...clean } = result as Record<string, unknown>;
+        displayResult = clean;
+        hSealReceipt = await buildReceipt({
+          serviceEndpoint: "https://mcp.xrpl-utilities.io",
+          attestation: hSealAttestation,
+          startedAt: Math.floor(startedMs / 1000),
+          completedAt: Math.floor(endedMs / 1000),
+          latencyMs: endedMs - startedMs,
+        });
+      }
+
       const attestation = await attest(
         { tool: req.params.name, args: signedArgs },
-        result,
+        displayResult,
       );
+
+      const meta: Record<string, unknown> = {};
+      if (attestation) meta.hSeal = attestation;
+      if (hSealReceipt) meta.hSealReceipt = hSealReceipt;
 
       return {
         content: [
           {
             type: "text" as const,
-            text: typeof result === "string" ? result : JSON.stringify(result, null, 2),
+            text: typeof displayResult === "string" ? displayResult : JSON.stringify(displayResult, null, 2),
           },
         ],
-        ...(attestation ? { _meta: { hSeal: attestation } } : {}),
+        ...(Object.keys(meta).length ? { _meta: meta } : {}),
       };
     } catch (e) {
       return {
