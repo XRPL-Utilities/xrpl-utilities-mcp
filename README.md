@@ -51,7 +51,9 @@ provider attestation. The attestation rides on the tool result's
 `_meta.hSeal`, so a caller can anchor a tamper-evident, independently
 verifiable on-chain receipt of the interaction. When either var is unset the
 feature is inert and responses are unchanged. Never hardcode the key — env
-only. See `src/hSeal.ts`.
+only. See `src/hSeal.ts` and the ops runbook
+[`docs/hseal-provider.md`](docs/hseal-provider.md) (current identity, the
+ed25519 curve gotcha, and how to rotate/recover the key).
 
 ## Use it
 
