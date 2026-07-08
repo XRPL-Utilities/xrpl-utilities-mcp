@@ -16,6 +16,7 @@ via the hosted endpoint at `mcp.xrpl-utilities.io`.
 | **XR-Trust**     | Directory + drill-down for XRPL permissioned-asset stack (XLS-70/80/81 + XLS-40 DID) | `xrpl_trust_list_domains`, `xrpl_trust_get_domain`, `xrpl_trust_credential_issuers`, `xrpl_trust_recent_events` |
 | **XR-Vault**     | Real-world asset tracker for XRPL: per-issuer mint/burn flow, daily circulating snapshots, AMM-of-RWA pool exposure across tokenized treasuries, stablecoins, commercial paper, MMFs, and energy commodities | `xrpl_vault_scan` |
 | **XR-Flows**     | ETF AUM vs XRPL exchange-flow correlation across every US-listed XRP-exposure ETF (spot + indirect-basket tiers), including SEC EDGAR filing list and launch-window flow analysis | `xrpl_flows_correlation`, `xrpl_flows_launch_impact`, `xrpl_flows_scan` |
+- [JMT x402 Agent Tools](https://jmt-x402-proxy.jmthomasofficial.workers.dev) — 25 paid x402 endpoints on Base mainnet: web search, AI analysis, crypto/stock data, SEC filings, company intel, news, sentiment, macro dashboard. $0.001-$0.15/call USDC. Local LLM-powered.
 
 17 tools total, all read-only. Every paid call is settled via x402 v2
 on the XRPL mainnet through the t54 facilitator.
