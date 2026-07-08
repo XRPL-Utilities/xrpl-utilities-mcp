@@ -66,17 +66,24 @@ export function buildServer(opts: DispatchOptions = {}): Server {
       delete signedArgs["payment_signature"];
       delete signedArgs["_bypass_key"];
 
-      // If the backend co-signed its OWN output (returned `hSealAttestation`),
-      // build a 2-party receipt: caller = this MCP, provider = that backend.
-      // Split it out of the displayed result and into _meta.hSealReceipt.
+      // If the backend co-signed its OWN output, build a 2-party receipt:
+      // caller = this MCP, provider = that backend. Split the provider
+      // attestation out of the displayed result and into _meta.hSealReceipt.
+      // Two shapes carry it: `hSealAttestation` (backend attaches it via its
+      // own /attest call) or `_hSeal` (the H-Seal v0.3.0 proxy sidecar merges
+      // it into every response). Accept either; prefer hSealAttestation.
       let displayResult: unknown = result;
       let hSealReceipt: HSealReceiptResult | undefined;
-      if (result && typeof result === "object" && "hSealAttestation" in result) {
-        const { hSealAttestation, ...clean } = result as Record<string, unknown>;
+      if (
+        result &&
+        typeof result === "object" &&
+        ("hSealAttestation" in result || "_hSeal" in result)
+      ) {
+        const { hSealAttestation, _hSeal, ...clean } = result as Record<string, unknown>;
         displayResult = clean;
         hSealReceipt = await buildReceipt({
           serviceEndpoint: "https://mcp.xrpl-utilities.io",
-          attestation: hSealAttestation,
+          attestation: hSealAttestation ?? _hSeal,
           startedAt: Math.floor(startedMs / 1000),
           completedAt: Math.floor(endedMs / 1000),
           latencyMs: endedMs - startedMs,
