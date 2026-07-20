@@ -16,6 +16,24 @@ is the corrected, signable payload.
 - `category` kept as `data` (accurate for the 6-product portfolio). Change to
   another enum if you prefer: `security automation finance infra ...`.
 
+## Regenerating `mcpManifest` (do this BEFORE signing)
+
+The `mcpManifest` field is a JSON.stringify snapshot of the live `tools/list`,
+so it goes stale every time a tool description changes. It did exactly that on
+2026-07-20: the XR-Flows descriptions were corrected in source while this file
+still advertised the old six-ticker text.
+
+```
+node scripts/regen_h_index_listing.mjs
+```
+
+It reads the **deployed** server (`endpointUrl`), not local source — so **deploy
+first and confirm the live descriptions are the ones you want**, otherwise you
+just re-bake stale text. The script refuses to write when nothing changed, prints
+which tools were added/removed/reworded, and clears `signature` (any prior
+signature is void the moment the manifest changes). It never touches `issuedAt`,
+because that must be the unix time at signing.
+
 ## To submit (only you can sign — Claude has no key)
 The owner is a **Base/EVM** account, so signing is **EIP-712**:
 
