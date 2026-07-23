@@ -16,6 +16,7 @@ import { ALL_TOOLS, SERVICES } from "./services/index.js";
 import { dispatchTool, type DispatchOptions } from "./dispatch.js";
 import { attest } from "./hSeal.js";
 import { buildReceipt, type HSealReceiptResult } from "./hSealReceipt.js";
+import { pricingFor } from "./pricing.js";
 import { SERVER_VERSION } from "./version.js";
 
 const SERVER_NAME = "xrpl-utilities";
@@ -32,22 +33,12 @@ export function buildServer(opts: DispatchOptions = {}): Server {
   // standard MCP spec ignores unknown _meta keys, so clients that don't render
   // it lose nothing; clients that do render get a clean signal.
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: ALL_TOOLS.map((t) => {
-      const pricing =
-        t.authMode === "free"
-          ? { paid: false, priceUsd: 0 }
-          : t.authMode === "async_invoice"
-            ? { paid: true, priceUsd: 0.10, settlement: "xrpl_invoice" }
-            : t.name === "xrpl_pulse_stream_purchase"
-              ? { paid: true, priceUsd: 0.50, priceUsdMax: 7.50, settlement: "x402_inline", note: "tiered_1h_6h_24h" }
-              : { paid: true, priceUsd: 0.10, settlement: "x402_inline" };
-      return {
-        name: t.name,
-        description: t.description,
-        inputSchema: t.inputSchema,
-        _meta: { pricing },
-      };
-    }),
+    tools: ALL_TOOLS.map((t) => ({
+      name: t.name,
+      description: t.description,
+      inputSchema: t.inputSchema,
+      _meta: { pricing: pricingFor(t.name, t.authMode) },
+    })),
   }));
 
   server.setRequestHandler(CallToolRequestSchema, async (req) => {

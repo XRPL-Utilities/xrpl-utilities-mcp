@@ -5,10 +5,11 @@
  *
  * Endpoints:
  *
- *   GET  /            - service banner + manifest pointer
- *   GET  /healthz     - liveness probe + service ping summary
- *   POST /mcp         - MCP JSON-RPC (streamable-http transport)
- *   GET  /mcp         - MCP JSON-RPC SSE (legacy clients)
+ *   GET  /                  - service banner + manifest pointer
+ *   GET  /healthz           - liveness probe + service ping summary
+ *   GET  /.well-known/x402  - x402 service catalog for agent directories
+ *   POST /mcp               - MCP JSON-RPC (streamable-http transport)
+ *   GET  /mcp               - MCP JSON-RPC SSE (legacy clients)
  *
  * Auth: every paid tool call still requires the caller to provide
  * their own payment_signature in the tool args. The hosted endpoint
@@ -21,6 +22,18 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { buildServer } from "../server.js";
 import { SERVICES, ALL_TOOLS } from "../services/index.js";
 import { SERVER_VERSION } from "../version.js";
+import { pricingFor } from "../pricing.js";
+
+/**
+ * Paid tools that do not carry their own charge. The Telemetry async-invoice
+ * flow is quote -> pay -> status -> results: one $0.10 purchase, three tools.
+ * Only the quote step is a priced resource.
+ */
+const NON_CHARGING_FLOW_STEPS = new Set([
+  "xrpl_telemetry_get_status",
+  "xrpl_telemetry_get_results",
+]);
+
 const RATE_WINDOW_MS = 60_000;
 const RATE_LIMIT_PER_WINDOW = 60; // generous; agents typically fire bursts
 
@@ -62,6 +75,7 @@ export async function runHttp(port: number): Promise<void> {
       mcp_endpoint: "/mcp",
       manifest: "/agents.json",
       well_known_manifest: "/.well-known/agents.json",
+      x402_catalog: "/.well-known/x402",
       llms_discovery: "/llms.txt",
       docs: "https://github.com/XRPL-Utilities/xrpl-utilities-mcp",
       portfolio: "https://xrpl-utilities.com",
@@ -120,6 +134,96 @@ export async function runHttp(port: number): Promise<void> {
   app.get("/agents.json", (_req, res) => res.json(manifest()));
   app.get("/.well-known/agents.json", (_req, res) => res.json(manifest()));
 
+  // ---- x402 service catalog --------------------------------------------
+  // Distinct from agents.json: this is the narrow, well-known-path catalog
+  // the x402 ecosystem crawls. t54's xrpl-ai.org ingests `name`,
+  // `description` and every `resources[]` entry from it verbatim; without
+  // it a merchant renders as a bare "Registered Resource" row.
+  //
+  // The Python services in the portfolio serve this from a static JSON file
+  // so the catalog cannot drift with request state. Here the catalog IS the
+  // tool registry, and `tsc` ships only compiled JS to dist/, so it is built
+  // from ALL_TOOLS with the same pricingFor() helper that backs
+  // `tools/list` `_meta.pricing`. That is a stronger guarantee than a static
+  // copy: a tool cannot be added, repriced or removed without this catalog
+  // following it.
+  //
+  // Every tool is invoked the same way, as an MCP `tools/call` JSON-RPC
+  // POST to /mcp, so each resource url carries the tool name as a fragment
+  // to keep the entries individually addressable for a crawler.
+  //
+  // Prices are the USD peg, not drops: the underlying service quotes the
+  // XRP leg at spot on every 402, so a fixed drops figure would go stale
+  // within the hour.
+  const x402Catalog = () => ({
+    x402Version: 2,
+    name: "XRPL-Utilities MCP",
+    description:
+      "Model Context Protocol server exposing the XRPL-Utilities portfolio " +
+      "(Sentinel wallet classifier, Pulse signal feed, Telemetry supply and " +
+      "utility floor, Trust XLS-70/80/81 directory, Vault RWA tracker, Flows " +
+      "ETF AUM vs XRPL flow correlation) as " + ALL_TOOLS.length + " callable tools for AI " +
+      "agents over stdio or streamable HTTP. Stateless passthrough: the " +
+      "caller supplies their own x402 payment header per tool call and it is " +
+      "forwarded to the underlying service. The MCP server holds no wallets, " +
+      "aggregates no billing and takes no cut.",
+    website: "https://mcp.xrpl-utilities.io",
+    endpoint: "https://mcp.xrpl-utilities.io/mcp",
+    protocol: "mcp/streamable-http",
+    resources: ALL_TOOLS.filter(
+      (t) =>
+        pricingFor(t.name, t.authMode).paid &&
+        // The Telemetry async-invoice flow charges once, at the quote step.
+        // status + results complete the same purchase at no extra charge, so
+        // listing them as separate priced resources would misstate the price.
+        !NON_CHARGING_FLOW_STEPS.has(t.name),
+    ).map((t) => {
+      const pricing = pricingFor(t.name, t.authMode);
+      return {
+        url: `https://mcp.xrpl-utilities.io/mcp#${t.name}`,
+        method: "POST",
+        name: t.name,
+        description: t.description,
+        priceAmount: pricing.priceUsd.toFixed(2),
+        priceAsset: "USD",
+        network: "xrpl:0",
+      };
+    }),
+    // Settlement happens on the underlying service, so these are the rails
+    // those 402 builders accept, not rails this server terminates itself.
+    networks: [
+      {
+        network: "xrpl:0",
+        scheme: "exact",
+        assets: [
+          { symbol: "XRP" },
+          {
+            symbol: "RLUSD",
+            asset: "524C555344000000000000000000000000000000",
+            issuer: "rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De",
+          },
+        ],
+      },
+      {
+        network: "eip155:8453",
+        scheme: "exact",
+        assets: [
+          {
+            symbol: "USDC",
+            asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            decimals: 6,
+          },
+        ],
+      },
+    ],
+    docs: "https://mcp.xrpl-utilities.io/llms.txt",
+    manifest: "https://mcp.xrpl-utilities.io/agents.json",
+  });
+
+  app.get("/.well-known/x402", (_req, res) =>
+    res.type("application/json").send(JSON.stringify(x402Catalog(), null, 2)),
+  );
+
   app.get("/llms.txt", (_req, res) => {
     const toolList = ALL_TOOLS.map((t) =>
       `- \`${t.name}\` [${t.authMode}]`,
@@ -155,6 +259,7 @@ export async function runHttp(port: number): Promise<void> {
       "",
       "## Discovery",
       "- Manifest:    https://mcp.xrpl-utilities.io/agents.json",
+      "- x402 catalog: https://mcp.xrpl-utilities.io/.well-known/x402",
       "- Source:      https://github.com/XRPL-Utilities/xrpl-utilities-mcp",
       "- npm package: https://www.npmjs.com/package/@xrpl-utilities/mcp",
       "- Portfolio:   https://xrpl-utilities.com",
