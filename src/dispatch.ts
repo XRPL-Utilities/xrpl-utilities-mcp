@@ -187,7 +187,7 @@ export async function dispatchTool(
       response: parsed,
       hint:
         res.status === 402
-          ? "This endpoint requires x402 payment. Sign an XRPL Payment matching one of the entries in 'accepts', base64-JSON-encode it, and pass as payment_signature."
+          ? "This endpoint requires x402 payment. Sign a payment matching one of the entries in 'accepts' (RLUSD or XRP on XRPL, or USDC on Base), base64-JSON-encode it, and pass as payment_signature. Prefer a stablecoin entry: RLUSD and USDC are quoted at a flat USD price, while the XRP entry is converted at spot and is absent whenever XRP/USD cannot be verified."
           : undefined,
     };
   }

@@ -195,13 +195,16 @@ export async function runHttp(port: number): Promise<void> {
       {
         network: "xrpl:0",
         scheme: "exact",
+        // RLUSD first, mirroring the order the services advertise in their
+        // 402 accepts[]. XRP is the only rail priced off the XRP/USD oracle,
+        // so it is offered but never the default a naive client lands on.
         assets: [
-          { symbol: "XRP" },
           {
             symbol: "RLUSD",
             asset: "524C555344000000000000000000000000000000",
             issuer: "rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De",
           },
+          { symbol: "XRP" },
         ],
       },
       {
@@ -253,7 +256,10 @@ export async function runHttp(port: number): Promise<void> {
       "tool args - a base64-JSON-encoded x402 v2 payment header signing an XRPL",
       "Payment that matches one of the requirements returned by an unauthenticated",
       "probe. The MCP server forwards it as the `PAYMENT-SIGNATURE` header on the",
-      "underlying call. $0.10 USD per call (XRP or RLUSD), settled inline via the",
+      "underlying call. $0.10 USD per call. Payable in RLUSD or XRP on XRPL, or",
+      "USDC on Base - RLUSD and USDC are quoted at a flat $0.10 and are the",
+      "rails to prefer; the XRP amount is converted at spot per challenge and is",
+      "omitted while XRP/USD is unverifiable. Settled inline via the",
       "t54 facilitator. The `async_invoice` tools (Telemetry quote/status/results)",
       "use an out-of-band XRPL Payment to a deeplink instead of an inline header.",
       "",
