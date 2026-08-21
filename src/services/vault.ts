@@ -14,7 +14,7 @@ export const vault: ServiceDef = {
   label: "XR-Vault",
   baseUrl: "https://vault.xrpl-utilities.io",
   manifestUrl: "https://vault.xrpl-utilities.io/agents.json",
-  knownSchemaVersions: ["1.0.0", "1.0.1", "1.0.2", "1.1.0", "1.2.0", "1.3.0", "1.4.0", "1.5.0", "1.5.1", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.9.1", "1.10.0", "1.11.0", "1.12.0", "1.12.1", "1.13.0"],
+  knownSchemaVersions: ["1.0.0", "1.0.1", "1.0.2", "1.1.0", "1.2.0", "1.3.0", "1.4.0", "1.5.0", "1.5.1", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.9.1", "1.10.0", "1.11.0", "1.12.0", "1.12.1", "1.13.0", "1.14.0"],
   tools: [
     {
       name: "xrpl_vault_scan",
