@@ -42,9 +42,17 @@ async function main(): Promise<void> {
   // on stderr (Claude Desktop captures stdout for the JSON-RPC stream).
   // On HTTP we log normally.
   if (!skipValidate) {
-    const results = await validateAllServices({ strict: false });
+    // Opt-in, default off: railway.json restarts ON_FAILURE, so failing closed
+    // by default would crash-loop the endpoint whenever one backend is cold.
+    const strict = process.env["STRICT_VALIDATE"] === "1";
+    const results = await validateAllServices({ strict });
     const log = transport === "stdio" ? console.error : console.log;
     for (const r of results) {
+      if (!r.checked) {
+        // Always say it, strict or not: a boot that verified nothing must be
+        // impossible to mistake for a clean one.
+        log(`[validate] ${r.service}: NOT CHECKED (no manifest)`);
+      }
       if (r.errors.length) {
         log(`[validate] ${r.service}: ERRORS`);
         r.errors.forEach((e) => log(`  ${e}`));
@@ -55,7 +63,8 @@ async function main(): Promise<void> {
       }
     }
     const anyError = results.some((r) => r.errors.length);
-    if (anyError && process.env["MCP_FAIL_ON_DRIFT"] === "1") {
+    const anyUnchecked = results.some((r) => !r.checked);
+    if ((anyError || (strict && anyUnchecked)) && process.env["MCP_FAIL_ON_DRIFT"] === "1") {
       process.exit(2);
     }
   }

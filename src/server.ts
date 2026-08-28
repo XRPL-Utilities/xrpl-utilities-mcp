@@ -21,6 +21,24 @@ import { SERVER_VERSION } from "./version.js";
 
 const SERVER_NAME = "xrpl-utilities";
 
+/**
+ * The dispatcher honours `_bypass_key`, but every tool schema declares
+ * `additionalProperties: false` — so a client that validates args against the
+ * advertised schema before sending (the normal SDK behaviour) refuses to send
+ * it and the documented operator bypass is simply unusable. Declaring it here
+ * keeps the closed-schema guarantee and makes the arg legal. Injected only on
+ * inline_x402 tools: the async_invoice and free tools never consult it, so
+ * advertising it there would be a false contract. Never in `required`.
+ */
+const BYPASS_ARG = {
+  _bypass_key: {
+    type: "string" as const,
+    description:
+      "Operator-issued bypass key. Only useful if the server operator gave you one; " +
+      "ignored unless it matches the server's MCP_BYPASS_KEY. Omit it and pay via payment_signature instead.",
+  },
+};
+
 export function buildServer(opts: DispatchOptions = {}): Server {
   const server = new Server(
     { name: SERVER_NAME, version: SERVER_VERSION },
@@ -36,7 +54,13 @@ export function buildServer(opts: DispatchOptions = {}): Server {
     tools: ALL_TOOLS.map((t) => ({
       name: t.name,
       description: t.description,
-      inputSchema: t.inputSchema,
+      inputSchema:
+        t.authMode === "inline_x402"
+          ? {
+              ...t.inputSchema,
+              properties: { ...(t.inputSchema.properties ?? {}), ...BYPASS_ARG },
+            }
+          : t.inputSchema,
       _meta: { pricing: pricingFor(t.name, t.authMode) },
     })),
   }));
@@ -75,6 +99,9 @@ export function buildServer(opts: DispatchOptions = {}): Server {
         hSealReceipt = await buildReceipt({
           serviceEndpoint: "https://mcp.xrpl-utilities.io",
           attestation: hSealAttestation ?? _hSeal,
+          // The body we actually deliver. buildReceipt re-hashes it and refuses
+          // to sign a receipt whose responseHash we cannot corroborate.
+          responseBody: clean,
           startedAt: Math.floor(startedMs / 1000),
           completedAt: Math.floor(endedMs / 1000),
           latencyMs: endedMs - startedMs,

@@ -29,6 +29,33 @@ const REPO_ROOT = resolve(__dirname, "..");
 
 const TIMEOUT_MS = 15_000;
 
+// schema_version arrives over the network and --auto-fix splices it into a
+// TypeScript source file that CI then commits and pushes. Anything outside this
+// allowlist (a quote, a backslash, a `$&` replacement pattern) either corrupts
+// the file or closes the string literal and injects code into a repo that
+// publishes to npm. One definition, used at ingest and again at the write.
+export const SCHEMA_VERSION_RE = /^[0-9A-Za-z._-]{1,32}$/;
+const KNOWN_SCHEMA_RE = /(knownSchemaVersions:\s*\[)([^\]]*)(\])/;
+
+/**
+ * Append one live schema_version to a service module's knownSchemaVersions.
+ * Pure so the guard is testable: `before` in, `{ ok, source, reason }` out.
+ * The replacement is built by a function callback, not a replacement string —
+ * `$&`, `$'` and friends are honoured in the string form and would splice
+ * response bytes into the source file.
+ */
+export function spliceSchemaVersion(before, addVersion) {
+  if (typeof addVersion !== "string" || !SCHEMA_VERSION_RE.test(addVersion)) {
+    return { ok: false, reason: "refusing to write malformed version" };
+  }
+  const m = before.match(KNOWN_SCHEMA_RE);
+  if (!m) return { ok: false, reason: "knownSchemaVersions array not found" };
+  if (m[2].includes(`"${addVersion}"`)) {
+    return { ok: false, reason: `${addVersion} already in array, skipping` };
+  }
+  return { ok: true, source: before.replace(KNOWN_SCHEMA_RE, (_m, a, b, c) => `${a}${b}, "${addVersion}"${c}`) };
+}
+
 let pass = 0;
 let fail = 0;
 const failures = [];
@@ -42,6 +69,32 @@ function bad(label, reason) {
   fail += 1;
   failures.push(`${label} — ${reason}`);
   console.log(`FAIL  ${label} — ${reason}`);
+}
+
+/**
+ * Codes that mean "the connection did not happen", not "the service answered
+ * badly". Node's fetch reports every one of these as the same opaque
+ * `TypeError: fetch failed` and hangs the real code off err.cause, so a
+ * message-substring test never sees ECONNREFUSED/ENOTFOUND - the exact
+ * cold-start shape the retry exists for. Mirrors src/validate.ts.
+ */
+const TRANSIENT_CODES = new Set([
+  "ECONNRESET", "ETIMEDOUT", "ECONNREFUSED", "ENOTFOUND", "EAI_AGAIN",
+  "EPIPE", "EHOSTUNREACH", "ENETUNREACH",
+  "UND_ERR_CONNECT_TIMEOUT", "UND_ERR_HEADERS_TIMEOUT",
+  "UND_ERR_BODY_TIMEOUT", "UND_ERR_SOCKET",
+]);
+
+export function isTransientFetchError(e, depth = 0) {
+  if (!e || typeof e !== "object" || depth > 5) return false;
+  if (e.name === "AbortError" || e.name === "TimeoutError") return true;
+  if (typeof e.code === "string" && TRANSIENT_CODES.has(e.code)) return true;
+  // undici wraps multi-address (A + AAAA) connect failures in an AggregateError
+  if (Array.isArray(e.errors) && e.errors.some((x) => isTransientFetchError(x, depth + 1))) return true;
+  if (e.cause && isTransientFetchError(e.cause, depth + 1)) return true;
+  // Last-resort message match: keeps non-undici throwers and existing callers working.
+  const msg = typeof e.message === "string" ? e.message : "";
+  return /aborted|ETIMEDOUT|ECONNRESET|ECONNREFUSED|ENOTFOUND|EAI_AGAIN/.test(msg);
 }
 
 async function fetchJsonOnce(url, init = {}) {
@@ -64,9 +117,10 @@ async function fetchJson(url, init = {}) {
   try {
     return await fetchJsonOnce(url, init);
   } catch (e) {
-    const msg = e?.message || String(e);
-    const transient = msg.includes("aborted") || msg.includes("ETIMEDOUT") || msg.includes("ECONNRESET");
-    if (!transient) throw e;
+    if (!isTransientFetchError(e)) throw e;
+    // Cold containers need real time to come up; an immediate retry re-hits
+    // the same refused socket.
+    await new Promise((r) => setTimeout(r, 750));
     return await fetchJsonOnce(url, init);
   }
 }
@@ -115,10 +169,23 @@ const TOOL_ARG_OVERRIDES = {
   xrpl_telemetry_get_results: { __skip: "stateful invoice poll, no fixture" },
   xrpl_pulse_get_status: { __skip: "stateful invoice poll, no fixture" },
   xrpl_pulse_get_results: { __skip: "stateful invoice poll, no fixture" },
-  // Trust path-param tools are populated by discoverFixtures() from the
-  // free index/event endpoints. If discovery fails, the __skip is set
-  // there so the scrubber surfaces a clear reason instead of a 404.
+  // Paid POST tools whose required arg has no schema default. Sent bodyless
+  // they 422 at the request model, which proved nothing about the payment
+  // gate; with a real fixture the request reaches the gate and must 402.
+  xrpl_vault_scan: { issuer: "RLUSD" },
+  xrpl_flows_scan: { ticker: "XRP" },
+  // Trust path-param tools and the address-keyed paid tools are populated by
+  // discoverFixtures() from the free index/event endpoints. If discovery
+  // fails, the __skip is set there so the scrubber surfaces a clear reason
+  // instead of a 404.
 };
+
+// Tools whose fixture comes from discovery and therefore may be absent.
+const ADDRESS_FIXTURE_TOOLS = [
+  "xrpl_sentinel_scan",
+  "xrpl_sentinel_scan_history",
+  "xrpl_pulse_events_by_address",
+];
 
 // Pulls live values off free endpoints so the scrubber can exercise tools
 // that take an opaque path param (domain_id, operator address). Self-
@@ -170,6 +237,25 @@ async function discoverFixtures() {
     TOOL_ARG_OVERRIDES.xrpl_trust_get_domain = { __skip: reason };
     console.log(`  ! domain_id: ${reason}`);
   }
+  // A live XRPL address for the address-keyed paid tools. Sourced from the
+  // Pulse RWA issuer map so there is no hardcoded address to rot.
+  try {
+    const { status, body } = await fetchJson("https://pulse.xrpl-utilities.io/stats/rwa-summary");
+    const addr = body?.issuers?.find((i) => i?.wallet)?.wallet;
+    if (status === 200 && addr) {
+      for (const t of ADDRESS_FIXTURE_TOOLS) TOOL_ARG_OVERRIDES[t] = { address: addr };
+      console.log(`  + address        = ${addr}`);
+    } else {
+      const reason = `discovery found no issuer wallet in rwa-summary (status=${status})`;
+      for (const t of ADDRESS_FIXTURE_TOOLS) TOOL_ARG_OVERRIDES[t] = { __skip: reason };
+      console.log(`  ! address: ${reason}`);
+    }
+  } catch (e) {
+    const reason = `discovery exception: ${e.message || e}`;
+    for (const t of ADDRESS_FIXTURE_TOOLS) TOOL_ARG_OVERRIDES[t] = { __skip: reason };
+    console.log(`  ! address: ${reason}`);
+  }
+
   console.log("");
 }
 
@@ -181,6 +267,11 @@ async function checkAgentsJson(service) {
     if (!body || typeof body !== "object") return bad(label, "no JSON body");
     const live = body.schema_version;
     if (!live) return bad(label, "missing schema_version");
+    if (typeof live !== "string" || !SCHEMA_VERSION_RE.test(live)) {
+      // bad() exits 1, which opens the drift Issue for a human. Never exit 2,
+      // which is the path that commits and pushes.
+      return bad(label, "malformed schema_version (refusing to auto-fix)");
+    }
     if (!service.knownSchemaVersions.includes(live)) {
       schemaFixes.push({ serviceId: service.id, addVersion: live });
       return bad(label, `live schema ${live} not in MCP knownSchemaVersions[last=${service.knownSchemaVersions.at(-1)}] — bump src/services/${service.id}.ts`);
@@ -188,6 +279,29 @@ async function checkAgentsJson(service) {
     ok(`${label} schema=${live}`);
   } catch (e) {
     bad(label, e.message || String(e));
+  }
+}
+
+// Every required arg present means the request reaches the payment gate rather
+// than the request model. payment_signature / _bypass_key are transport-only
+// and never part of a fixture.
+function requiredArgsSatisfied(tool, args) {
+  const required = tool.inputSchema?.required || [];
+  return required
+    .filter((k) => k !== "payment_signature" && k !== "_bypass_key")
+    .every((k) => args[k] !== undefined && args[k] !== "");
+}
+
+// The 402 challenge should name the resource that was actually called. Live
+// Pulse /events/by-address advertises resource.url = .../events/recent. That is
+// real drift, but it is the backend's to fix and failing the daily scrub on it
+// would bury every other check, so it is a warning, not a failure.
+function warnOnChallengeUrlDrift(label, url, body) {
+  const res = body?.resource ?? body?.accepts?.[0]?.resource;
+  const advertised = typeof res === "string" ? res : res?.url;
+  if (typeof advertised !== "string") return;
+  if (advertised.split("?")[0] !== url.split("?")[0]) {
+    console.log(`WARN  ${label} — 402 challenge advertises resource ${advertised}, called ${url}`);
   }
 }
 
@@ -216,14 +330,26 @@ async function checkTool(tool) {
   }
   try {
     const { status, body } = await fetchJson(url, init);
-    // inline_x402 = payment must accompany the request. 402 is the canonical
-    // challenge; 422 is "body validation tripped before the payment dep
-    // ran" (FastAPI/Pydantic order). Both prove the endpoint is alive +
-    // still paid. 200 means the gate dropped — a real regression.
+    // inline_x402 = payment must accompany the request. 402 is the only status
+    // that proves the runtime payment check still runs. A bodyless probe also
+    // 402s — every paid service installs a RequestValidationError shim that
+    // returns 402 for one — so a 402 without a fixture proves only that the
+    // path is listed in that service's _PAID_PATHS. Hence: with every required
+    // arg supplied, 402 is the only pass and 422 means the fixture went stale;
+    // without a fixture, SKIP rather than score an unproven PASS. 200 means the
+    // gate dropped — the regression this check exists for.
     if (tool.authMode === "inline_x402") {
-      if (status === 402 || status === 422) return ok(`${label} (paid, got ${status})`);
       if (status === 200) return bad(label, `paid tool returned 200 — payment gate dropped?`);
-      return bad(label, `expected 402/422 challenge, got ${status}`);
+      if (!requiredArgsSatisfied(tool, args)) {
+        console.log(`SKIP  ${label} — no fixture for required args, gate not provable (got ${status})`);
+        return;
+      }
+      if (status === 402) {
+        warnOnChallengeUrlDrift(label, url, body);
+        return ok(`${label} (paid, got 402)`);
+      }
+      if (status === 422) return bad(label, "got 422, fixture stale, gate not proven");
+      return bad(label, `expected 402 challenge, got ${status}`);
     }
     // async_invoice covers a 3-step flow: get_quote (free, returns invoice
     // metadata), get_status, get_results. The quote step is intentionally
@@ -417,19 +543,12 @@ async function main() {
       const filePath = resolve(REPO_ROOT, `src/services/${serviceId}.ts`);
       try {
         const before = readFileSync(filePath, "utf8");
-        const re = /(knownSchemaVersions:\s*\[)([^\]]*)(\])/;
-        const m = before.match(re);
-        if (!m) {
-          console.log(`  ! ${serviceId}: knownSchemaVersions array not found`);
+        const spliced = spliceSchemaVersion(before, addVersion);
+        if (!spliced.ok) {
+          console.log(`  ! ${serviceId}: ${spliced.reason}`);
           continue;
         }
-        const arr = m[2];
-        if (arr.includes(`"${addVersion}"`)) {
-          console.log(`  ! ${serviceId}: ${addVersion} already in array, skipping`);
-          continue;
-        }
-        const after = before.replace(re, `$1$2, "${addVersion}"$3`);
-        writeFileSync(filePath, after);
+        writeFileSync(filePath, spliced.source);
         applied.push({ serviceId, addVersion, filePath });
         console.log(`  + ${serviceId}: appended ${addVersion}`);
       } catch (e) {
@@ -450,7 +569,11 @@ async function main() {
   process.exit(0);
 }
 
-main().catch((e) => {
-  console.error("scrubber crashed:", e);
-  process.exit(2);
-});
+// Only run the scrub when invoked as a script — the pure helpers above are
+// imported by the test suite, which must not fire live requests or exit().
+if (process.argv[1] && resolve(process.argv[1]) === __filename) {
+  main().catch((e) => {
+    console.error("scrubber crashed:", e);
+    process.exit(2);
+  });
+}

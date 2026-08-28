@@ -39,6 +39,11 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Test
+        # Hermetic: no network. Keeps the guards in tests/ from rotting
+        # silently between releases.
+        run: npm test
+
       - name: Verify package.json version matches the tag
         # Belt-and-braces: refuse to publish if someone tags v0.2.0 but
         # forgot to bump package.json from 0.1.2. npm would reject the

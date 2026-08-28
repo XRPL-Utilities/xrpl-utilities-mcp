@@ -82,7 +82,7 @@ jobs:
             echo
             cat .auto-fix-summary.txt
             echo
-            echo "_Auto-generated; safe to merge if the live backends are the canonical source of truth._"
+            echo "_Auto-generated from live backend responses. The human merge is the only gate between a backend response and committed source in a repo that publishes to npm, so read the diff._"
           } > /tmp/pr-body.txt
           gh pr create \
             --title "auto-fix: schema-version sync" \

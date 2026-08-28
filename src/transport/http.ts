@@ -13,8 +13,18 @@
  *
  * Auth: every paid tool call still requires the caller to provide
  * their own payment_signature in the tool args. The hosted endpoint
- * is a transparent proxy, NOT a subsidy. Operator-issued bypass via
- * MCP_BYPASS_KEY env var is rate-limited per-IP at the proxy layer.
+ * is a transparent proxy, NOT a subsidy.
+ *
+ * Two separate budgets guard the operator-issued MCP_BYPASS_KEY path:
+ * a generous per-IP request limit, and a much tighter per-IP budget on
+ * FAILED `_bypass_key` attempts. The failed-attempt budget is enforced at
+ * the point of the guess (see dispatch's isBypassBlocked) and only 429s
+ * requests that carry a key - a batched body is thousands of guesses in one
+ * request, and a blanket 429 on the bucket key is an outage, not a limit. The request limit alone is not an
+ * access control on a secret - 60 guesses a minute is still online
+ * guessing - and both are only as good as the client key, so see
+ * clientKey() for why the left-most X-Forwarded-For entry must never
+ * be used.
  */
 
 import express, { type Request, type Response } from "express";
@@ -37,29 +47,199 @@ const NON_CHARGING_FLOW_STEPS = new Set([
 const RATE_WINDOW_MS = 60_000;
 const RATE_LIMIT_PER_WINDOW = 60; // generous; agents typically fire bursts
 
+// Failed `_bypass_key` attempts get their own, far tighter budget. An operator
+// who was given the key never trips this; anyone enumerating it does so within
+// a handful of tries.
+// 10 minutes, not an hour: with the lockout scoped to key-carrying requests
+// and enforced per guess, a short hold is still a hard stop on online guessing
+// of a >=32-byte key, and it bounds any residual collateral.
+const BYPASS_FAIL_WINDOW_MS = 600_000;
+const BYPASS_FAIL_LIMIT = 10;
+
+// A single JSON-RPC array is dispatched message by message, so at the 1mb body
+// cap one POST otherwise carries roughly 5,000 tool calls.
+const MAX_BATCH_MESSAGES = 20;
+
+// Hard ceiling on tracked keys. Buckets are swept on a timer, but a burst of
+// distinct addresses inside one window must not be able to grow the heap
+// without bound: an unbounded Map on the public endpoint is an OOM away from
+// taking mcp.xrpl-utilities.io down.
+const MAX_TRACKED_KEYS = 50_000;
+
+/**
+ * How many proxy hops in front of this container are ours. Railway's edge
+ * APPENDS the real peer to X-Forwarded-For, it does not replace what the
+ * client sent, so the trustworthy entry is counted from the RIGHT. Default 1;
+ * override only after counting the entries on a request you made yourself
+ * against the live deploy. Too high re-opens the spoof; too low used to
+ * collapse every caller into one bucket keyed on an internal proxy IP, which
+ * clientKey() now degrades out of rather than shares - a safety net, not a
+ * substitute for the real count.
+ */
+const TRUST_PROXY_HOPS = Math.max(0, Number(process.env["TRUST_PROXY_HOPS"] ?? "1") || 0);
+
 interface RateBucket {
   count: number;
   resetAt: number;
+  /** Set once the over-budget alert has been logged for this bucket. */
+  logged?: boolean;
 }
 const rateBuckets = new Map<string, RateBucket>();
+const bypassFailBuckets = new Map<string, RateBucket>();
 
-function rateLimit(req: Request, res: Response): boolean {
-  const ip = (req.headers["x-forwarded-for"] ?? req.socket.remoteAddress ?? "unknown")
-    .toString()
-    .split(",")[0]!
-    .trim();
-  const now = Date.now();
-  let bucket = rateBuckets.get(ip);
-  if (!bucket || bucket.resetAt < now) {
-    bucket = { count: 0, resetAt: now + RATE_WINDOW_MS };
-    rateBuckets.set(ip, bucket);
+// Addresses that can never be a real caller on a public endpoint. An entry
+// matching this means TRUST_PROXY_HOPS is pointing at an internal proxy, not at
+// the client.
+const PRIVATE = /^(::1|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|f[cd][0-9a-f]{2}:|fe80:)/i;
+const norm = (s: string) => s.replace(/^::ffff:/i, "").replace(/^\[|\]$/g, "");
+
+// One line per process, not one per request: a per-request console.error on a
+// misconfigured hop count is its own amplifier.
+let warnedAllPrivate = false;
+
+/**
+ * The address to charge for this request. The socket peer is the trustworthy
+ * value and the header is only a hint: reading X-Forwarded-For[0] takes
+ * whatever the client typed, so a fresh value per request buys a fresh bucket
+ * and the limiter never fires (and setting a victim's address burns theirs).
+ */
+export function clientKey(req: Pick<Request, "headers" | "socket">): string {
+  const socketIp = req.socket?.remoteAddress ?? "unknown";
+  if (TRUST_PROXY_HOPS === 0) return socketIp;
+  const raw = req.headers["x-forwarded-for"];
+  const entries = (Array.isArray(raw) ? raw.join(",") : raw ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  // Fewer entries than trusted hops means the request did not come through the
+  // proxy chain we configured for; fall back to the peer rather than to a
+  // caller-supplied entry.
+  if (entries.length < TRUST_PROXY_HOPS) return socketIp;
+  // Start at the hop we were told to trust, then walk LEFT past anything
+  // private. An under-counted TRUST_PROXY_HOPS otherwise lands on an internal
+  // proxy address and collapses every caller into one bucket - which turns the
+  // failed-bypass lockout into a whole-endpoint outage. Walking left is not a
+  // spoof window: Railway appends the real peer, so the first PUBLIC entry from
+  // the right is the earliest one an attacker cannot have written.
+  for (let i = entries.length - TRUST_PROXY_HOPS; i >= 0; i--) {
+    const candidate = norm(entries[i] as string);
+    if (candidate && !PRIVATE.test(candidate)) return candidate;
   }
-  bucket.count += 1;
+  if (!warnedAllPrivate) {
+    warnedAllPrivate = true;
+    // eslint-disable-next-line no-console
+    console.error(
+      `[mcp] every X-Forwarded-For entry is private (trust_proxy_hops=${TRUST_PROXY_HOPS}); ` +
+        `keying the limiter on the socket peer. Measure the real hop count on the live deploy.`,
+    );
+  }
+  return socketIp;
+}
+
+function sweep(map: Map<string, RateBucket>, now: number): void {
+  for (const [k, b] of map) {
+    if (b.resetAt < now) map.delete(k);
+  }
+}
+
+/**
+ * Fetch (or open) this key's bucket. Never clear() the whole map on hitting the
+ * cap: that zeroes every live counter and hands an attacker a free limiter
+ * reset. Expired entries go first, then oldest-first (Map preserves insertion
+ * order).
+ */
+function bucketFor(map: Map<string, RateBucket>, key: string, windowMs: number, now: number): RateBucket {
+  const existing = map.get(key);
+  if (existing && existing.resetAt >= now) return existing;
+  if (map.size >= MAX_TRACKED_KEYS) {
+    sweep(map, now);
+    for (const k of map.keys()) {
+      if (map.size < MAX_TRACKED_KEYS) break;
+      map.delete(k);
+    }
+  }
+  const fresh: RateBucket = { count: 0, resetAt: now + windowMs };
+  map.set(key, fresh);
+  return fresh;
+}
+
+// unref'd so it never holds the process open - this module graph is shared with
+// the stdio/CLI entry point.
+const sweepTimer = setInterval(() => {
+  const now = Date.now();
+  sweep(rateBuckets, now);
+  sweep(bypassFailBuckets, now);
+}, RATE_WINDOW_MS);
+sweepTimer.unref();
+
+/**
+ * Does this JSON-RPC body actually carry a `_bypass_key`? The failed-bypass
+ * lockout is scoped to these: 429ing everything from the bucket key would let
+ * eleven wrong keys take tools/list, initialize, the free tools and every paid
+ * x402 call offline for the whole window - and with an unmeasured
+ * TRUST_PROXY_HOPS that bucket key can be one shared proxy address, i.e. the
+ * whole endpoint. Guesses always carry the key, so the guard still stops 100%
+ * of guessing. Parsed off the envelope rather than probed loosely so a
+ * `_bypass_key` sitting somewhere else in the payload cannot self-lock.
+ */
+export function carriesBypassKey(body: unknown): boolean {
+  const one = (m: any) =>
+    typeof m?.params?.arguments?._bypass_key === "string" ||
+    typeof m?.params?._bypass_key === "string";
+  return Array.isArray(body) ? body.some(one) : one(body);
+}
+
+/**
+ * Same predicate rateLimit() uses, exported so dispatch can consult it at the
+ * point of the guess. One definition: a second copy would drift.
+ */
+export function isBypassBlocked(ip: string): boolean {
+  const b = bypassFailBuckets.get(ip);
+  return !!b && b.resetAt >= Date.now() && b.count > BYPASS_FAIL_LIMIT;
+}
+
+export function rateLimit(req: Request, res: Response): boolean {
+  const ip = clientKey(req);
+  const now = Date.now();
+
+  // A caller who has burned through the failed-bypass budget is guessing at the
+  // operator secret; hold them off for the rest of the window regardless of
+  // their request count - but only on the requests that carry a key, so the
+  // lockout cannot become a denial of service against everyone else sharing
+  // the bucket key.
+  const fails = bypassFailBuckets.get(ip);
+  if (fails && fails.resetAt >= now && fails.count > BYPASS_FAIL_LIMIT && carriesBypassKey(req.body)) {
+    res.status(429).json({ error: "rate_limited", retry_after_s: Math.ceil((fails.resetAt - now) / 1000) });
+    return false;
+  }
+
+  const bucket = bucketFor(rateBuckets, ip, RATE_WINDOW_MS, now);
+  // A batched body is N calls, not one request: charging it as one let a single
+  // POST buy the whole window's worth of upstream fan-out.
+  bucket.count += Array.isArray(req.body) ? Math.max(1, req.body.length) : 1;
   if (bucket.count > RATE_LIMIT_PER_WINDOW) {
     res.status(429).json({ error: "rate_limited", retry_after_s: Math.ceil((bucket.resetAt - now) / 1000) });
     return false;
   }
   return true;
+}
+
+/** Count one wrong `_bypass_key` against this caller. */
+export function recordBypassFailure(ip: string): void {
+  const now = Date.now();
+  const bucket = bucketFor(bypassFailBuckets, ip, BYPASS_FAIL_WINDOW_MS, now);
+  bucket.count += 1;
+  // `>= limit+1 && !logged` rather than `=== limit+1`: a batch that records
+  // several failures in a row steps straight over the equality and the alert
+  // never fires.
+  if (bucket.count >= BYPASS_FAIL_LIMIT + 1 && !bucket.logged) {
+    bucket.logged = true;
+    // eslint-disable-next-line no-console
+    console.error(
+      `[mcp] ${ip} exceeded the failed _bypass_key budget ` +
+        `(${BYPASS_FAIL_LIMIT} per ${Math.round(BYPASS_FAIL_WINDOW_MS / 60_000)}min); throttling`,
+    );
+  }
 }
 
 export async function runHttp(port: number): Promise<void> {
@@ -301,12 +481,25 @@ export async function runHttp(port: number): Promise<void> {
   // build-connect-handle-close per request. Cheap: the Server object
   // is just function pointers, no expensive state.
   app.all("/mcp", async (req, res) => {
+    // Complement to the per-guess gate below, not a substitute for it: batching
+    // was dropped in MCP spec 2025-06-18 but the SDK still maps batched
+    // messages for back-compat, so cap the array rather than banning it and
+    // breaking legacy 2025-03-26 clients.
+    if (Array.isArray(req.body) && req.body.length > MAX_BATCH_MESSAGES) {
+      res.status(413).json({ error: "batch_too_large", max_messages: MAX_BATCH_MESSAGES });
+      return;
+    }
     if (!rateLimit(req, res)) return;
+    const ip = clientKey(req);
     let transport: StreamableHTTPServerTransport | null = null;
     try {
       const mcpServer = buildServer({
         bypassKey: process.env["MCP_BYPASS_KEY"],
         userAgent: `xrpl-utilities-mcp/${SERVER_VERSION} (http)`,
+        onBypassFailure: () => recordBypassFailure(ip),
+        // Per-message, so a batched body cannot spend thousands of guesses
+        // between two request-level checks.
+        isBypassBlocked: () => isBypassBlocked(ip),
       });
       transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: undefined, // stateless
@@ -335,8 +528,19 @@ export async function runHttp(port: number): Promise<void> {
     console.error("[mcp] unhandledRejection:", reason);
   });
 
+  // A short bypass key is guessable at 60 req/min even with the failed-attempt
+  // budget in place. Warn rather than refuse: pulling the key out from under a
+  // live deploy would break the operator/demo path mid-flight.
+  const bypassKey = process.env["MCP_BYPASS_KEY"];
+  if (bypassKey && bypassKey.length < 32) {
+    // eslint-disable-next-line no-console
+    console.error(
+      `[mcp] MCP_BYPASS_KEY is ${bypassKey.length} chars; use >=32 random bytes and scope/rotate it per service.`,
+    );
+  }
+
   app.listen(port, () => {
     // eslint-disable-next-line no-console
-    console.log(`xrpl-utilities-mcp listening on :${port} (http)`);
+    console.log(`xrpl-utilities-mcp listening on :${port} (http, trust_proxy_hops=${TRUST_PROXY_HOPS})`);
   });
 }

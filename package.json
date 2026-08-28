@@ -18,11 +18,12 @@
     "start:stdio": "node dist/index.js --transport stdio",
     "start:http": "node dist/index.js --transport http",
     "dev": "tsc --watch",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "test": "npm run build && node --test tests/*.test.mjs"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0",
-    "@xr-utilities/h-seal-provider": "github:XR-Utilities/h-seal-provider#v0.2.0",
+    "@modelcontextprotocol/sdk": "~1.29.0",
+    "@xr-utilities/h-seal-provider": "github:XR-Utilities/h-seal-provider#e266eeaccc916339eb329012eaf9557368bebbe0",
     "express": "^4.21.0"
   },
   "devDependencies": {

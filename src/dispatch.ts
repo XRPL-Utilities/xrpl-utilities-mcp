@@ -33,6 +33,7 @@
 import { timingSafeEqual } from "node:crypto";
 
 import { findToolOwner } from "./services/index.js";
+import type { JSONSchema7 } from "./jsonschema.js";
 import { SERVER_VERSION } from "./version.js";
 
 
@@ -62,6 +63,22 @@ export interface DispatchOptions {
    * can distinguish MCP traffic from direct API users.
    */
   userAgent?: string;
+  /**
+   * Called when a caller presented a `_bypass_key` that did not match.
+   * The transport layer counts these per-IP: a 60/min request limit still
+   * permits thousands of guesses a day against the shared bypass key, and
+   * the 402-vs-200 divergence is a clean oracle, so failed attempts need
+   * their own much tighter budget.
+   */
+  onBypassFailure?: () => void;
+  /**
+   * True while this caller has already burned through the failed-`_bypass_key`
+   * budget. Checked here, at the point of the guess, not only at the start of
+   * the HTTP request: one batched JSON-RPC POST carries thousands of messages,
+   * so a per-request check let a single body spend thousands of guesses before
+   * the lockout could apply.
+   */
+  isBypassBlocked?: () => boolean;
 }
 
 /**
@@ -81,6 +98,11 @@ export async function dispatchTool(
   const { service, tool } = owner;
   const baseUrl = opts.baseUrlOverride?.(service.id) ?? service.baseUrl;
 
+  // The low-level MCP Server does NOT check arguments against the advertised
+  // inputSchema - only McpServer.registerTool does - so every declared
+  // pattern/enum/limit is advisory until we enforce it here.
+  args = validateArgs(toolName, tool.inputSchema, args);
+
   // Substitute path params (e.g. /domain/{domain_id}) from args.
   let path = tool.path;
   const consumedPathArgs = new Set<string>();
@@ -90,8 +112,17 @@ export async function dispatchTool(
         `tool ${toolName} requires path parameter ${key}, missing from args`,
       );
     }
+    // Unconditional, schema-independent. "." / ".." / a slash survive
+    // encodeURIComponent's intent because the WHATWG URL parser normalizes the
+    // built URL afterwards: /domain/.. collapses to the service root, and the
+    // paid drill-down tool then returns the root banner as a success - which,
+    // with H-Seal on, gets co-signed as an answer to the tool that was called.
+    const raw = String(args[key]);
+    if (raw === "" || raw === "." || raw === ".." || /[/\\]/.test(raw)) {
+      throw new Error(`tool ${toolName}: invalid value for path parameter ${key}`);
+    }
     consumedPathArgs.add(key);
-    return encodeURIComponent(String(args[key]));
+    return encodeURIComponent(raw);
   });
 
   // Strip args reserved for transport-level concerns (payment_signature,
@@ -124,10 +155,25 @@ export async function dispatchTool(
   if (tool.authMode === "inline_x402") {
     if (callerPaymentSig) {
       headers["PAYMENT-SIGNATURE"] = callerPaymentSig;
-    } else if (callerBypassKey && opts.bypassKey && timingSafeStringEqual(callerBypassKey, opts.bypassKey)) {
-      // Operator-issued bypass. Forward as the dev-bypass header that
-      // the underlying services accept.
-      headers["PAYMENT-SIGNATURE"] = callerBypassKey;
+    } else if (callerBypassKey) {
+      // Check BEFORE comparing. Gating only the failure branch would leave the
+      // compare reachable, so a blocked caller who finally guesses right still
+      // gets granted - the budget would cap the noise, not the attack.
+      // Throwing rather than falling through to the 402 path also stops the
+      // upstream fan-out a batched body would otherwise amplify, and it reads
+      // the same for every key: the block is per-IP, so it leaks nothing.
+      if (opts.isBypassBlocked?.()) {
+        throw new Error("bypass key attempts exhausted; retry later");
+      }
+      if (opts.bypassKey && timingSafeStringEqual(callerBypassKey, opts.bypassKey)) {
+        // Operator-issued bypass. Forward as the dev-bypass header that
+        // the underlying services accept.
+        headers["PAYMENT-SIGNATURE"] = callerBypassKey;
+      } else {
+        // A wrong key is a guess at the operator secret, not ordinary traffic.
+        // Report it so the transport can budget guesses separately from requests.
+        opts.onBypassFailure?.();
+      }
     } else {
       // No auth supplied. Fire the request anyway so the caller gets
       // the real 402 challenge back from the underlying service - that
@@ -196,4 +242,78 @@ export async function dispatchTool(
 
 function stringArg(v: unknown): string | undefined {
   return typeof v === "string" && v.length > 0 ? v : undefined;
+}
+
+// Args the dispatcher consumes itself. They are never part of the API payload
+// and are not declared on every schema, so the unknown-key drop must not eat
+// them or the operator bypass stops working.
+const RESERVED_ARGS = new Set<string>(["payment_signature", "_bypass_key"]);
+
+/**
+ * Enforce the tool's advertised inputSchema. Throws on a violation; returns the
+ * args to actually send, with unknown keys dropped when the schema is closed
+ * (today every tool sets additionalProperties: false, so an invented key would
+ * otherwise be forwarded verbatim into the upstream query string or body).
+ *
+ * Deliberately tolerant about numbers-as-strings: LLM clients routinely send
+ * "10" for an integer arg and the backends coerce it, so rejecting that would
+ * break working callers without closing anything.
+ */
+function validateArgs(
+  toolName: string,
+  schema: JSONSchema7,
+  args: Record<string, unknown>,
+): Record<string, unknown> {
+  const props = schema.properties ?? {};
+  const closed = schema.additionalProperties === false;
+  const out: Record<string, unknown> = {};
+
+  // `required` is deliberately NOT enforced here. A caller probing a paid tool
+  // with no args to get the real 402 challenge back is a supported discovery
+  // move (see the auth block below); turning that into a local error would
+  // break it.
+  for (const [key, value] of Object.entries(args)) {
+    const spec = props[key];
+    if (!spec) {
+      if (RESERVED_ARGS.has(key)) out[key] = value;
+      else if (!closed) out[key] = value;
+      continue;
+    }
+    if (value === undefined || value === null) {
+      out[key] = value;
+      continue;
+    }
+    const problem = valueProblem(spec, value);
+    if (problem) {
+      throw new Error(`tool ${toolName}: invalid value for ${key}: ${problem}`);
+    }
+    out[key] = value;
+  }
+  return out;
+}
+
+function valueProblem(spec: JSONSchema7, value: unknown): string | null {
+  if (spec.enum && !spec.enum.some((e) => e === value || String(e) === String(value))) {
+    return `must be one of [${spec.enum.map(String).join(", ")}]`;
+  }
+  if (spec.type === "number" || spec.type === "integer") {
+    const n = typeof value === "number" ? value : Number(String(value));
+    if (!Number.isFinite(n)) return `must be a ${spec.type}`;
+    if (spec.type === "integer" && !Number.isInteger(n)) return "must be an integer";
+    if (typeof spec.minimum === "number" && n < spec.minimum) return `must be >= ${spec.minimum}`;
+    if (typeof spec.maximum === "number" && n > spec.maximum) return `must be <= ${spec.maximum}`;
+    return null;
+  }
+  if (spec.type === "boolean") {
+    if (typeof value === "boolean") return null;
+    return value === "true" || value === "false" ? null : "must be a boolean";
+  }
+  if (spec.type === "string") {
+    if (typeof value !== "string") return "must be a string";
+    if (spec.pattern && !new RegExp(spec.pattern).test(value)) {
+      return `must match ${spec.pattern}`;
+    }
+    return null;
+  }
+  return null;
 }
