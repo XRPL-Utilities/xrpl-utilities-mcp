@@ -50,10 +50,15 @@ const RATE_LIMIT_PER_WINDOW = 60; // generous; agents typically fire bursts
 // Failed `_bypass_key` attempts get their own, far tighter budget. An operator
 // who was given the key never trips this; anyone enumerating it does so within
 // a handful of tries.
-// 10 minutes, not an hour: with the lockout scoped to key-carrying requests
-// and enforced per guess, a short hold is still a hard stop on online guessing
-// of a >=32-byte key, and it bounds any residual collateral.
-const BYPASS_FAIL_WINDOW_MS = 600_000;
+// An hour, not ten minutes. The window is the denominator of the online
+// guessing budget against MCP_BYPASS_KEY: at ten minutes a persistent guesser
+// gets ~1,584 tries a day, at an hour ~264. The collateral the shorter window
+// was bought to relieve had already been removed by scoping the lockout to
+// key-carrying requests - all that is left is that an operator sharing a bucket
+// key with a guesser cannot use their own bypass key until the window expires,
+// which is narrow and self-resolving. The file only warns on a short key, so
+// the budget has to stay small.
+const BYPASS_FAIL_WINDOW_MS = 3_600_000;
 const BYPASS_FAIL_LIMIT = 10;
 
 // A single JSON-RPC array is dispatched message by message, so at the 1mb body
@@ -90,7 +95,18 @@ const bypassFailBuckets = new Map<string, RateBucket>();
 // Addresses that can never be a real caller on a public endpoint. An entry
 // matching this means TRUST_PROXY_HOPS is pointing at an internal proxy, not at
 // the client.
-const PRIVATE = /^(::1|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|f[cd][0-9a-f]{2}:|fe80:)/i;
+//
+// RFC1918 and loopback are not the whole set: container platforms put RFC 6598
+// CGNAT space (100.64.0.0/10) in X-Forwarded-For, and Google's load balancers -
+// which Railway sits behind - source from 35.191.0.0/16 and 130.211.0.0/22,
+// both of which are publicly routable. Leaving those out made the left-walk
+// return on its first iteration and collapse every caller into one bucket
+// keyed on the proxy, which is the availability regression the walk exists to
+// close. None of these ranges can be the source address of a real client of
+// this endpoint, so skipping past them opens no spoof window: the entry to
+// their left is the one the platform appended, not one the caller typed.
+const PRIVATE =
+  /^(::1|0\.0\.0\.0$|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.|35\.191\.|130\.211\.[0-3]\.|f[cd][0-9a-f]{2}:|fe80:)/i;
 const norm = (s: string) => s.replace(/^::ffff:/i, "").replace(/^\[|\]$/g, "");
 
 // One line per process, not one per request: a per-request console.error on a
@@ -229,6 +245,11 @@ export function recordBypassFailure(ip: string): void {
   const now = Date.now();
   const bucket = bucketFor(bypassFailBuckets, ip, BYPASS_FAIL_WINDOW_MS, now);
   bucket.count += 1;
+  // Slide the window on every recorded failure so a caller who keeps guessing
+  // never ages into a fresh budget, while a bucket that goes quiet still
+  // expires on its own. Only real failures slide it: refused requests are not
+  // counted, so an operator retrying a valid key cannot extend their own hold.
+  bucket.resetAt = now + BYPASS_FAIL_WINDOW_MS;
   // `>= limit+1 && !logged` rather than `=== limit+1`: a batch that records
   // several failures in a row steps straight over the equality and the alert
   // never fires.

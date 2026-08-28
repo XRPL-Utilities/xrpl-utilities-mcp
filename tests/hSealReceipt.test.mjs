@@ -21,6 +21,17 @@ process.env.HSEAL_ENDPOINT = "http://127.0.0.1:1";
 
 const { buildReceipt } = await import("../dist/hSealReceipt.js");
 
+// A refusal must never sign a body, and must never be indistinguishable from
+// H-Seal being switched off. `undefined` means "not configured"; a refusal
+// returns a body-less result carrying the reason.
+function assertRefusedButNotSilent(out) {
+  assert.notEqual(out, undefined, "a refusal must not look like H-Seal being off");
+  assert.equal(out.body, undefined, "a refusal must not sign anything");
+  assert.equal(typeof out.verifyError, "string", "a refusal must say why");
+  assert.ok(out.verifyError.length > 0, "a refusal must say why");
+}
+
+
 const BODY = { tool: "xrpl_trust_get_domain", domain: "ABC", holders: 3 };
 
 async function attestationFor({ signer, identity, responseBody, responseHash, requestHash }) {
@@ -85,7 +96,7 @@ test("an attestation with no providerSignature is refused", async () => {
     responseBody: BODY,
     ...timing,
   });
-  assert.equal(out, undefined);
+  assertRefusedButNotSilent(out);
 });
 
 test("a corrupted providerSignature is refused", async () => {
@@ -98,7 +109,7 @@ test("a corrupted providerSignature is refused", async () => {
     responseBody: BODY,
     ...timing,
   });
-  assert.equal(out, undefined);
+  assertRefusedButNotSilent(out);
 });
 
 test("a signature whose key does not derive providerIdentity is refused", async () => {
@@ -111,7 +122,7 @@ test("a signature whose key does not derive providerIdentity is refused", async 
     responseBody: BODY,
     ...timing,
   });
-  assert.equal(out, undefined);
+  assertRefusedButNotSilent(out);
 });
 
 test("a provider outside HSEAL_ALLOWED_PROVIDERS is refused", async () => {
@@ -122,7 +133,7 @@ test("a provider outside HSEAL_ALLOWED_PROVIDERS is refused", async () => {
     responseBody: BODY,
     ...timing,
   });
-  assert.equal(out, undefined);
+  assertRefusedButNotSilent(out);
 });
 
 test("the address oracle matches the published XRPL ed25519 vector", () => {

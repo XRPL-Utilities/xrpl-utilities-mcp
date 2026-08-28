@@ -19,6 +19,14 @@
 // Run locally:  npm run build && node scripts/contract_scrub.mjs
 
 import { SERVICES, ALL_TOOLS } from "../dist/services/index.js";
+// One definition of "the connection did not happen", shared with the boot-time
+// validator. The scrubber already runs from dist/ (the import above), so the
+// copy that used to live here bought nothing and left two security-adjacent
+// retry classifiers to drift apart - each green against its own fixtures.
+// Re-exported so tests/contractScrub.test.mjs keeps exercising it through this
+// module's surface.
+import { isTransientFetchError } from "../dist/validate.js";
+export { isTransientFetchError };
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
@@ -69,32 +77,6 @@ function bad(label, reason) {
   fail += 1;
   failures.push(`${label} — ${reason}`);
   console.log(`FAIL  ${label} — ${reason}`);
-}
-
-/**
- * Codes that mean "the connection did not happen", not "the service answered
- * badly". Node's fetch reports every one of these as the same opaque
- * `TypeError: fetch failed` and hangs the real code off err.cause, so a
- * message-substring test never sees ECONNREFUSED/ENOTFOUND - the exact
- * cold-start shape the retry exists for. Mirrors src/validate.ts.
- */
-const TRANSIENT_CODES = new Set([
-  "ECONNRESET", "ETIMEDOUT", "ECONNREFUSED", "ENOTFOUND", "EAI_AGAIN",
-  "EPIPE", "EHOSTUNREACH", "ENETUNREACH",
-  "UND_ERR_CONNECT_TIMEOUT", "UND_ERR_HEADERS_TIMEOUT",
-  "UND_ERR_BODY_TIMEOUT", "UND_ERR_SOCKET",
-]);
-
-export function isTransientFetchError(e, depth = 0) {
-  if (!e || typeof e !== "object" || depth > 5) return false;
-  if (e.name === "AbortError" || e.name === "TimeoutError") return true;
-  if (typeof e.code === "string" && TRANSIENT_CODES.has(e.code)) return true;
-  // undici wraps multi-address (A + AAAA) connect failures in an AggregateError
-  if (Array.isArray(e.errors) && e.errors.some((x) => isTransientFetchError(x, depth + 1))) return true;
-  if (e.cause && isTransientFetchError(e.cause, depth + 1)) return true;
-  // Last-resort message match: keeps non-undici throwers and existing callers working.
-  const msg = typeof e.message === "string" ? e.message : "";
-  return /aborted|ETIMEDOUT|ECONNRESET|ECONNREFUSED|ENOTFOUND|EAI_AGAIN/.test(msg);
 }
 
 async function fetchJsonOnce(url, init = {}) {

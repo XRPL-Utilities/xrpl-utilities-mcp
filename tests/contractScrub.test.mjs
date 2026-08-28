@@ -4,6 +4,7 @@
 
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { SCHEMA_VERSION_RE, spliceSchemaVersion, isTransientFetchError } from "../scripts/contract_scrub.mjs";
 
 const SOURCE = '  knownSchemaVersions: ["1.0.0", "1.1.0"],\n';
@@ -64,4 +65,25 @@ test("the scrubber's retry recognises the shape Node actually throws", () => {
   assert.equal(isTransientFetchError(new TypeError("Invalid URL")), false);
   assert.equal(isTransientFetchError(new Error("HTTP 500")), false);
   assert.equal(isTransientFetchError(undefined), false);
+});
+
+test("the scrubber and the boot-time validator share one retry classifier", async () => {
+  // Both copies were ~20 lines of security-adjacent retry classification, each
+  // green against its own fixtures: add a code to one and the daily 08:00 UTC
+  // scrubber and the boot validator classify the same undici error
+  // differently, which is the drift class the pair was written to remove. The
+  // stated reason for the copy - "the scrubber runs from source and must not
+  // depend on dist/" - was already untrue: contract_scrub.mjs imports
+  // ../dist/services/index.js on its first line.
+  const { isTransientFetchError: fromValidate } = await import("../dist/validate.js");
+  assert.equal(isTransientFetchError, fromValidate,
+    "contract_scrub.mjs has its own copy of isTransientFetchError again");
+});
+
+test("contract_scrub.mjs declares no second retry classifier", () => {
+  const src = readFileSync(new URL("../scripts/contract_scrub.mjs", import.meta.url), "utf-8");
+  assert.equal(/function\s+isTransientFetchError/.test(src), false,
+    "a local isTransientFetchError is back in contract_scrub.mjs");
+  assert.equal(/TRANSIENT_CODES\s*=/.test(src), false,
+    "a local TRANSIENT_CODES table is back in contract_scrub.mjs");
 });

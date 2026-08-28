@@ -64,7 +64,7 @@ const REQUEST_HASH_BASIS = "provider_asserted";
 export const hSealReceiptEnabled: boolean = Boolean(callerIdentity && callerKeyRaw);
 
 export interface HSealReceiptResult {
-  /** The signed receipt. Absent when H-Seal returned an explicit reject. */
+  /** The signed receipt. Absent whenever the MCP refused to sign, or H-Seal explicitly rejected. */
   body?: unknown;
   verdict?: unknown;
   verifyError?: string;
@@ -181,9 +181,11 @@ const warnedUnpinned = new Set<string>();
  * `verdict` is best-effort — if the H-Seal service is unreachable the body
  * still stands and `verifyError` records why, but an explicit H-Seal reject
  * drops the body. A responseHash that does not match what we delivered also
- * drops the body, and says so in `verifyError` rather than vanishing. Returns
- * undefined when H-Seal isn't configured, the attestation is malformed, or the
- * provider checks fail. Never throws.
+ * drops the body, and says so in `verifyError` rather than vanishing, as does
+ * every other refusal: a malformed attestation, a provider signature that does
+ * not authenticate, and an identity outside HSEAL_ALLOWED_PROVIDERS all return
+ * a body-less result with a reason. Only two cases return undefined - H-Seal
+ * not being configured at all, and our own signing throwing. Never throws.
  */
 export async function buildReceipt(opts: {
   serviceEndpoint: string;
@@ -194,8 +196,16 @@ export async function buildReceipt(opts: {
   completedAt: number;
   latencyMs: number;
 }): Promise<HSealReceiptResult | undefined> {
+  // The ONLY branch that may stay silent: H-Seal genuinely is not configured,
+  // so the absence of _meta.hSealReceipt is the truthful answer.
   if (!hSealReceiptEnabled) return undefined;
-  if (!looksLikeAttestation(opts.attestation)) return undefined;
+  if (!looksLikeAttestation(opts.attestation)) {
+    // The server only calls us when the backend put SOMETHING in the
+    // attestation slot, so a shape we cannot parse is producer drift, not
+    // "no attestation". Do not echo the blob back to the caller.
+    console.error("[hSealReceipt] attestation is missing required fields (see looksLikeAttestation); refusing to sign");
+    return { verifyError: "provider attestation is malformed", requestHashBasis: REQUEST_HASH_BASIS };
+  }
   const att = opts.attestation;
 
   // Corroborate the one hash we can compute ourselves. The backends hash the
@@ -217,7 +227,10 @@ export async function buildReceipt(opts: {
   const problem = providerSignatureProblem(att);
   if (problem) {
     console.error(`[hSealReceipt] provider attestation rejected: ${problem}; refusing to sign`);
-    return undefined;
+    // `problem` names an UNAUTHENTICATED identity/key, so it stays in the log.
+    // The caller gets the fact of the refusal, which is the part that must not
+    // be indistinguishable from the feature being switched off.
+    return { verifyError: "provider attestation failed authentication", requestHashBasis: REQUEST_HASH_BASIS };
   }
 
   if (allowedProviders.length > 0) {
@@ -225,7 +238,7 @@ export async function buildReceipt(opts: {
       console.error(
         `[hSealReceipt] providerIdentity ${att.providerIdentity} is not in HSEAL_ALLOWED_PROVIDERS; refusing to sign`,
       );
-      return undefined;
+      return { verifyError: "provider is not in HSEAL_ALLOWED_PROVIDERS", requestHashBasis: REQUEST_HASH_BASIS };
     }
   } else if (!warnedUnpinned.has(att.providerIdentity)) {
     warnedUnpinned.add(att.providerIdentity);
