@@ -24,7 +24,9 @@
  * access control on a secret - 60 guesses a minute is still online
  * guessing - and both are only as good as the client key, so see
  * clientKey() for why the left-most X-Forwarded-For entry must never
- * be used.
+ * be used. The transport also refuses to boot behind a bypass key shorter
+ * than 32 bytes (assertBypassKeyStrength), so those budgets are a second
+ * layer rather than the only one.
  */
 
 import express, { type Request, type Response } from "express";
@@ -56,8 +58,9 @@ const RATE_LIMIT_PER_WINDOW = 60; // generous; agents typically fire bursts
 // was bought to relieve had already been removed by scoping the lockout to
 // key-carrying requests - all that is left is that an operator sharing a bucket
 // key with a guesser cannot use their own bypass key until the window expires,
-// which is narrow and self-resolving. The file only warns on a short key, so
-// the budget has to stay small.
+// which is narrow and self-resolving. A short key is now refused at boot
+// rather than warned about, but the budget stays small: it is what bounds
+// online guessing against a key that is long and still unlucky.
 const BYPASS_FAIL_WINDOW_MS = 3_600_000;
 const BYPASS_FAIL_LIMIT = 10;
 
@@ -263,7 +266,48 @@ export function recordBypassFailure(ip: string): void {
   }
 }
 
+/**
+ * Minimum MCP_BYPASS_KEY strength, in bytes. 32 random bytes is the same floor
+ * the Python services put on X402_REPLAY_HMAC_KEY, which raises at import
+ * rather than warning.
+ */
+export const MIN_BYPASS_KEY_BYTES = 32;
+
+/**
+ * Refuse to boot the public HTTP transport behind a guessable bypass key.
+ *
+ * This used to be a console warning. A warning on a deploy nobody is reading
+ * the logs of is not a control, and it left the two request budgets above
+ * load-bearing: they are the only thing between a short key and an online
+ * guesser. A key too weak to stand on its own is an operator mistake that has
+ * to be fixed before the endpoint is reachable, not after.
+ *
+ * Scoped to the HTTP transport on purpose. stdio is single-tenant, runs on the
+ * user's own machine, and exposes no network guessing surface, so the same
+ * floor there would only break local dev for no gain.
+ *
+ * Never logs or embeds the key, only its length.
+ */
+export function assertBypassKeyStrength(rawKey: string | undefined): void {
+  if (!rawKey) return; // unset is fine: the bypass path is simply off.
+  const bytes = Buffer.byteLength(rawKey, "utf8");
+  if (bytes >= MIN_BYPASS_KEY_BYTES) return;
+  throw new Error(
+    `MCP_BYPASS_KEY is ${bytes} bytes; the HTTP transport requires at least ` +
+      `${MIN_BYPASS_KEY_BYTES}. It is an operator secret on a public endpoint, ` +
+      "and a short one is guessable online. Generate a new one with " +
+      "`openssl rand -hex 32`, set it on this service, and rotate it per " +
+      "service rather than sharing one across them. To run without the bypass " +
+      "path, unset MCP_BYPASS_KEY entirely; callers pay with their own " +
+      "payment_signature either way.",
+  );
+}
+
 export async function runHttp(port: number): Promise<void> {
+  // Before anything binds a port. A boot that refuses is recoverable; a boot
+  // that serves a weak operator key is not.
+  assertBypassKeyStrength(process.env["MCP_BYPASS_KEY"]);
+
   const app = express();
   app.use(express.json({ limit: "1mb" }));
 
@@ -549,16 +593,8 @@ export async function runHttp(port: number): Promise<void> {
     console.error("[mcp] unhandledRejection:", reason);
   });
 
-  // A short bypass key is guessable at 60 req/min even with the failed-attempt
-  // budget in place. Warn rather than refuse: pulling the key out from under a
-  // live deploy would break the operator/demo path mid-flight.
-  const bypassKey = process.env["MCP_BYPASS_KEY"];
-  if (bypassKey && bypassKey.length < 32) {
-    // eslint-disable-next-line no-console
-    console.error(
-      `[mcp] MCP_BYPASS_KEY is ${bypassKey.length} chars; use >=32 random bytes and scope/rotate it per service.`,
-    );
-  }
+  // Key strength is checked at the top of runHttp, before anything binds, and
+  // is a refusal rather than the warning that used to sit here.
 
   app.listen(port, () => {
     // eslint-disable-next-line no-console
