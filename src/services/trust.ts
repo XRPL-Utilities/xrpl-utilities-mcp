@@ -15,7 +15,7 @@ export const trust: ServiceDef = {
   label: "XR-Trust",
   baseUrl: "https://trust.xrpl-utilities.io",
   manifestUrl: "https://trust.xrpl-utilities.io/agents.json",
-  knownSchemaVersions: ["2026-13", "2026-14", "2026-15", "2026-16", "2026-17", "2026-18", "2026-19", "2026-20", "2026-21", "2026-22", "2026-23", "2026-24", "2026-25", "2026-26", "2026-27", "2026-28", "2026-29", "2026-30", "2026-31", "2026-32", "2026-33", "2026-34", "2026-35", "2026-36", "2026-37", "2026-38", "2026-39", "2026-40", "2026-41", "2026-42"],
+  knownSchemaVersions: ["2026-13", "2026-14", "2026-15", "2026-16", "2026-17", "2026-18", "2026-19", "2026-20", "2026-21", "2026-22", "2026-23", "2026-24", "2026-25", "2026-26", "2026-27", "2026-28", "2026-29", "2026-30", "2026-31", "2026-32", "2026-33", "2026-34", "2026-35", "2026-36", "2026-37", "2026-38", "2026-39", "2026-40", "2026-41", "2026-42", "2026-43"],
   tools: [
     {
       name: "xrpl_trust_list_domains",
@@ -240,6 +240,39 @@ export const trust: ServiceDef = {
       },
       method: "GET",
       path: "/jurisdictions",
+      authMode: "free",
+    },
+    {
+      name: "xrpl_trust_permissioned_activity",
+      description:
+        "Free. " +
+        "Newest-first feed of permissioned-domain ledger activity: XLS-70/80 domain and " +
+        "credential lifecycle, XLS-81 permissioned-DEX offers and AMM ops, and Payments made " +
+        "inside a domain. Consecutive same-account quote runs are collapsed into one row with a " +
+        "count, because a market maker replacing its own offers as the reference price moves is " +
+        "one behaviour, not hundreds of events - that churn is ~94% of raw permissioned-DEX " +
+        "volume and is normal market making, not an anomaly. Filter with category=lifecycle to " +
+        "see only domain and credential changes, which are the rare institutional signal. " +
+        "Carries a rollup of the whole window so the churn is visible as a proportion.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          limit: { type: "integer", description: "Rows to return.", minimum: 1, maximum: 200, default: 50 },
+          category: {
+            type: "string",
+            description: "lifecycle (XLS-70/80), dex (XLS-81), or settlement (in-domain Payments).",
+            enum: ["lifecycle", "dex", "settlement"],
+          },
+          account: { type: "string", description: "Only this account's activity.", pattern: "^r[1-9A-HJ-NP-Za-km-z]{24,34}$" },
+          domain_id: { type: "string", description: "Only this PermissionedDomain id." },
+          collapse: { type: "boolean", description: "Collapse consecutive same-account quote runs.", default: true },
+          before_id: { type: "integer", description: "Cursor: return rows older than this event_id." },
+          window_hours: { type: "integer", description: "Rollup window.", minimum: 1, maximum: 720, default: 24 },
+        },
+        additionalProperties: false,
+      },
+      method: "GET",
+      path: "/activity",
       authMode: "free",
     },
   ],
