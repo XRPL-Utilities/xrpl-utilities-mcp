@@ -1,0 +1,10 @@
+# Smithery listing (https://smithery.ai). Stdio server launched via npx; no
+# configuration needed: paid tools return the x402 challenge and the agent's
+# own wallet signs the payment.
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties: {}
+  commandFunction: |-
+    (config) => ({ command: 'npx', args: ['-y', '@xrpl-utilities/mcp'] })
