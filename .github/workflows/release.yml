@@ -104,6 +104,15 @@ jobs:
         # GitHub OIDC auth: registry verifies the workflow's id-token
         # claim against the io.github.XRPL-Utilities/* namespace.
         # No PAT or secret required.
+        # The registry checks npm for the version we just published, and npm
+        # takes a while to serve it: 7 of 12 releases up to v0.2.203 failed
+        # here with "version not found (404)" seconds after a good npm publish.
+        # Retry with backoff (~5 min total) instead of failing on the race.
         run: |
           mcp-publisher login github-oidc
-          mcp-publisher publish
+          for i in 1 2 3 4 5 6; do
+            if mcp-publisher publish; then exit 0; fi
+            echo "registry publish attempt $i failed; waiting for npm to serve the version"
+            sleep $((i * 20))
+          done
+          exit 1
