@@ -74,7 +74,15 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish to npm
-        run: npm publish --access public --provenance
+        # Skip when this version is already on npm, so "re-run failed jobs"
+        # can reach the registry step after a registry-only failure.
+        run: |
+          V=$(node -p "require('./package.json').version")
+          if npm view "@xrpl-utilities/mcp@$V" version >/dev/null 2>&1; then
+            echo "npm already has $V; skipping publish"
+          else
+            npm publish --access public --provenance
+          fi
 
       - name: Sync server.json version to tag
         # mcp-publisher cross-verifies that the version in server.json
