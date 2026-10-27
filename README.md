@@ -8,17 +8,18 @@ via the hosted endpoint at `mcp.xrpl-utilities.io`.
 
 ## Services covered
 
-| Service       | What it does                                            | Tools |
-|---------------|---------------------------------------------------------|-------|
-| **XR-Sentinel**  | XRPL wallet activity-pattern classifier (0-100 score, 35-signal catalog including account-genesis chain + provenance flags + AI narrative) | `xrpl_sentinel_scan`, `xrpl_sentinel_scan_history` |
-| **XR-Pulse**     | Normalized XRPL signal feed: public-source news, on-chain whale activity, XLS-70/80/81 lifecycle, RWA mint/burn flow, AMM-of-RWA pool snapshots. Also streamable live via `POST /stream/purchase` + WebSocket (1h/6h/24h tiers) directly on the backend; MCP exposes the snapshot endpoints here. | `xrpl_pulse_recent_events`, `xrpl_pulse_events_by_address`, `xrpl_pulse_stream_purchase` |
-| **XR-Telemetry** | XRPL macro snapshot: supply, liquidity, AMM, Active Float, Burst Math utility floor | `xrpl_telemetry_snapshot`, `xrpl_telemetry_get_quote`, `xrpl_telemetry_get_status`, `xrpl_telemetry_get_results` |
-| **XR-Trust**     | Directory + drill-down for XRPL permissioned-asset stack (XLS-70/80/81 + XLS-40 DID) | `xrpl_trust_list_domains`, `xrpl_trust_get_domain`, `xrpl_trust_credential_issuers`, `xrpl_trust_recent_events` |
-| **XR-Vault**     | Real-world asset tracker for XRPL: per-issuer mint/burn flow, daily circulating snapshots, AMM-of-RWA pool exposure across tokenized treasuries, stablecoins, commercial paper, MMFs, and energy commodities | `xrpl_vault_scan` |
-| **XR-Flows**     | ETF AUM vs XRPL exchange-flow correlation across every US-listed XRP-exposure ETF (spot + indirect-basket tiers), including SEC EDGAR filing list and launch-window flow analysis | `xrpl_flows_correlation`, `xrpl_flows_launch_impact`, `xrpl_flows_scan` |
+| Service       | What it does | Tools |
+|---------------|--------------|-------|
+| **XR-Sentinel** | XRPL wallet activity-pattern classifier: activity score, signal catalog, label context, AI narrative; a free check that an x402 seller controls the XRPL account it advertises | `xrpl_sentinel_scan` (paid), `xrpl_sentinel_scan_history` (paid), `xrpl_sentinel_verify_origin` (free) |
+| **XR-Pulse** | Normalized XRPL event feed (news, whale moves, RWA mints and burns, Sentinel signals) plus free market views: Ripple counterparties, exchange flows, escrow calendar, RLUSD distribution, RWA summary, token health. Live WebSocket streams are sold through `xrpl_pulse_stream_purchase` | `xrpl_pulse_recent_events` (paid), `xrpl_pulse_events_by_address` (paid), `xrpl_pulse_stream_purchase` (paid), `xrpl_pulse_ripple_counterparties` (free), `xrpl_pulse_ripple_topology` (free), `xrpl_pulse_cex_attribution` (free), `xrpl_pulse_network_stats` (free), `xrpl_pulse_xrpl_primitives` (free), `xrpl_pulse_whale_flow_24h` (free), `xrpl_pulse_exchange_flow_delta` (free), `xrpl_pulse_rwa_summary` (free), `xrpl_pulse_exchange_net_flow` (free), `xrpl_pulse_escrow_calendar` (free), `xrpl_pulse_entity_positioning` (free), `xrpl_pulse_rlusd_distribution` (free), `xrpl_pulse_token_health` (free) |
+| **XR-Telemetry** | XRPL macro snapshot (supply, liquidity, AMM, Active Float) and settlement and DEX volume series | `xrpl_telemetry_snapshot` (paid), `xrpl_telemetry_get_quote` (paid, invoice), `xrpl_telemetry_get_status` (paid, invoice), `xrpl_telemetry_get_results` (paid, invoice), `xrpl_telemetry_settlement_totals` (free), `xrpl_telemetry_settlement_series` (free), `xrpl_telemetry_dex_pair_volume` (free) |
+| **XR-Trust** | Directory and drill-down for the XRPL permissioned-asset stack (XLS-70/80/81, XLS-40 DID), operator index, jurisdictions and permissioned-domain activity | `xrpl_trust_list_domains` (paid), `xrpl_trust_get_domain` (paid), `xrpl_trust_credential_issuers` (paid), `xrpl_trust_recent_events` (free), `xrpl_trust_list_operators_index` (free), `xrpl_trust_operator_drilldown` (paid), `xrpl_trust_operator_attribution` (free), `xrpl_trust_usage_summary` (free), `xrpl_trust_jurisdictions` (free), `xrpl_trust_permissioned_activity` (free) |
+| **XR-Vault** | Real-world asset tracker: per-issuer supply, mint and burn flow, AMM pool exposure | `xrpl_vault_scan` (paid), `xrpl_vault_daily_flow` (free) |
+| **XR-Flows** | XRP ETF AUM against XRPL exchange flow, launch impact and cross-border flow | `xrpl_flows_scan` (paid), `xrpl_flows_correlation` (free), `xrpl_flows_cross_border_flow` (free), `xrpl_flows_launch_impact` (free), `xrpl_flows_etf_flow_summary` (free) |
+| **XR-Desk** | Composite desk briefing: market posture, positioning, RLUSD health, supply pressure, RWA market | `xrpl_desk_briefing` (free) |
 
-17 tools total, all read-only. Every paid call is settled via x402 v2
-on the XRPL mainnet through the t54 facilitator.
+44 tools total: 15 paid, 29 free, all read-only.
+Paid calls settle over x402 v2 in XRP or RLUSD on XRPL, or USDC on Base.
 
 ## Auth model
 
@@ -92,7 +93,7 @@ Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_
 }
 ```
 
-Restart Claude Desktop. The 17 tools should appear with the prefix
+Restart Claude Desktop. The 44 tools should appear with the prefix
 `xrpl_`. Ask Claude to "scan the wallet rXXX with XR-Sentinel" or
 "list permissioned domains on XRPL" and the tool calls flow through.
 
