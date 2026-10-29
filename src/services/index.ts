@@ -14,8 +14,9 @@ import { telemetry } from "./telemetry.js";
 import { trust } from "./trust.js";
 import { vault } from "./vault.js";
 import { flows } from "./flows.js";
+import { ledger } from "./ledger.js";
 
-export const SERVICES: ServiceDef[] = [sentinel, pulse, telemetry, trust, vault, flows];
+export const SERVICES: ServiceDef[] = [sentinel, pulse, telemetry, trust, vault, flows, ledger];
 
 /** Flat list of every tool across every registered service. */
 export const ALL_TOOLS = SERVICES.flatMap((s) =>

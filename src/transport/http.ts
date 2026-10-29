@@ -315,7 +315,7 @@ export async function runHttp(port: number): Promise<void> {
     res.json({
       service: "xrpl-utilities-mcp",
       description:
-        "MCP server for the XRPL-Utilities portfolio (Sentinel, Pulse, Telemetry, Trust, Vault, Flows). Connect any MCP client to /mcp.",
+        "MCP server for the XRPL-Utilities portfolio (Sentinel, Pulse, Telemetry, Trust, Vault, Flows, Ledger). Connect any MCP client to /mcp.",
       version: SERVER_VERSION,
       mcp_endpoint: "/mcp",
       manifest: "/agents.json",
@@ -343,7 +343,7 @@ export async function runHttp(port: number): Promise<void> {
     provider: "XRPL-Utilities™",
     description:
       "Model Context Protocol server exposing the XRPL-Utilities portfolio " +
-      "(Sentinel, Pulse, Telemetry, Trust, Vault, Flows) as " + ALL_TOOLS.length + " callable tools " +
+      "(Sentinel, Pulse, Telemetry, Trust, Vault, Flows, Ledger) as " + ALL_TOOLS.length + " callable tools " +
       "for AI agents. Stateless passthrough proxy: callers supply their own " +
       "x402 v2 payment header per tool call. Settled inline via the t54 " +
       "facilitator on XRPL mainnet; $0.10 USD per paid call lands on the " +
@@ -407,7 +407,7 @@ export async function runHttp(port: number): Promise<void> {
       "Model Context Protocol server exposing the XRPL-Utilities portfolio " +
       "(Sentinel wallet classifier, Pulse signal feed, Telemetry supply and " +
       "utility floor, Trust XLS-70/80/81 directory, Vault RWA tracker, Flows " +
-      "ETF AUM vs XRPL flow correlation) as " + ALL_TOOLS.length + " callable tools for AI " +
+      "ETF AUM vs XRPL flow correlation, Ledger account statements) as " + ALL_TOOLS.length + " callable tools for AI " +
       "agents over stdio or streamable HTTP. Stateless passthrough: the " +
       "caller supplies their own x402 payment header per tool call and it is " +
       "forwarded to the underlying service. The MCP server holds no wallets, " +
@@ -480,7 +480,7 @@ export async function runHttp(port: number): Promise<void> {
       "# XRPL-Utilities MCP™",
       "",
       "Model Context Protocol server exposing the XRPL-Utilities portfolio",
-      `(Sentinel, Pulse, Telemetry, Trust, Vault, Flows) as ${ALL_TOOLS.length} callable tools for AI agents.`,
+      `(Sentinel, Pulse, Telemetry, Trust, Vault, Flows, Ledger) as ${ALL_TOOLS.length} callable tools for AI agents.`,
       "Stateless passthrough proxy.",
       "Provider: XRPL-Utilities™ LLC.",
       "",
@@ -504,7 +504,8 @@ export async function runHttp(port: number): Promise<void> {
       "underlying call. $0.10 USD per call. Payable in RLUSD or XRP on XRPL, or",
       "USDC on Base - RLUSD and USDC are quoted at a flat $0.10 and are the",
       "rails to prefer; the XRP amount is converted at spot per challenge and is",
-      "omitted while XRP/USD is unverifiable. Settled inline via the",
+      "omitted while XRP/USD is unverifiable. XR-Ledger takes the two XRPL",
+      "rails only. Settled inline via the",
       "t54 facilitator. The `async_invoice` tools (Telemetry quote/status/results)",
       "use an out-of-band XRPL Payment to a deeplink instead of an inline header.",
       "",
