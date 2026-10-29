@@ -42,7 +42,7 @@ async function main(): Promise<void> {
   // on stderr (Claude Desktop captures stdout for the JSON-RPC stream).
   // On HTTP we log normally.
   if (!skipValidate) {
-    // Opt-in, default off: railway.json restarts ON_FAILURE, so failing closed
+    // Opt-in, default off: Railway restarts the service ON_FAILURE, so failing closed
     // by default would crash-loop the endpoint whenever one backend is cold.
     const strict = process.env["STRICT_VALIDATE"] === "1";
     const results = await validateAllServices({ strict });
