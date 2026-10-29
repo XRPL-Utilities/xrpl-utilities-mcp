@@ -1,10 +1,14 @@
 name: Release
 
-# Publish to npm whenever a v* tag is pushed. Cuts the release cycle to
-# a single command:
+# Publishes to npm and the MCP Registry. Two ways in:
 #
-#   npm version patch       # bumps package.json, creates a v* tag
-#   git push --follow-tags  # pushes commit + tag, kicks off this workflow
+#   1. A version bump merged to main (npm does not have package.json's
+#      version yet). The workflow publishes, then creates the v<version>
+#      tag itself. This is the normal path: cloud sessions can push
+#      branches but not tags, so tag-only releases stalled from 2026-10-27
+#      (0.2.206 to 0.2.208 never reached npm).
+#   2. A pushed v* tag, as before:
+#        npm version patch && git push --follow-tags
 #
 # Auth via the NPM_TOKEN repository secret (granular publish-only token,
 # scoped to @xrpl-utilities). Once we move to OIDC trusted-publisher
@@ -15,12 +19,21 @@ on:
   push:
     tags:
       - "v*"
+    branches: [main]
+    # The workflow file too, so a change here releases a pending bump.
+    paths: [package.json, .github/workflows/release.yml]
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      # write: path 1 creates the release tag with the workflow token.
+      contents: write
       # id-token: write enables two things:
       #   1. npm provenance (sigstore-signed proof that this exact artifact
       #      was built from this repo at this commit by GitHub Actions).
@@ -33,31 +46,58 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Resolve version
+        # A tag run releases the tag's version. A main or manual run releases
+        # package.json's version, and only when npm does not have it yet, so
+        # a package.json edit that is not a version bump does nothing.
+        id: v
+        run: |
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "version=$PKG_VERSION" >> "$GITHUB_OUTPUT"
+          if npm view "@xrpl-utilities/mcp@$PKG_VERSION" version >/dev/null 2>&1; then
+            echo "npm already has $PKG_VERSION; nothing to release"
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Install dependencies
+        if: steps.v.outputs.publish == 'true'
         run: npm ci
 
       - name: Build
+        if: steps.v.outputs.publish == 'true'
         run: npm run build
 
       - name: Test
+        if: steps.v.outputs.publish == 'true'
         # Hermetic: no network. Keeps the guards in tests/ from rotting
         # silently between releases.
         run: npm test
 
       - name: Verify package.json version matches the tag
+        if: steps.v.outputs.publish == 'true'
         # Belt-and-braces: refuse to publish if someone tags v0.2.0 but
         # forgot to bump package.json from 0.1.2. npm would reject the
         # mismatched version anyway, but the error message is opaque.
         run: |
           PKG_VERSION=$(node -p "require('./package.json').version")
-          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          TAG_VERSION="$VERSION"
           if [ "$PKG_VERSION" != "$TAG_VERSION" ]; then
             echo "::error::package.json version ($PKG_VERSION) does not match tag ($TAG_VERSION)"
             exit 1
           fi
           echo "version check OK: $PKG_VERSION"
+        env:
+          VERSION: ${{ steps.v.outputs.version }}
 
       - name: Configure npm auth
+        if: steps.v.outputs.publish == 'true'
         # Write the registry credential explicitly. setup-node's
         # registry-url integration wasn't picking up NODE_AUTH_TOKEN
         # in our first run (ENEEDAUTH at publish time). The explicit
@@ -74,6 +114,7 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish to npm
+        if: steps.v.outputs.publish == 'true'
         # Skip when this version is already on npm, so "re-run failed jobs"
         # can reach the registry step after a registry-only failure.
         run: |
@@ -84,13 +125,32 @@ jobs:
             npm publish --access public --provenance
           fi
 
+      - name: Tag the release
+        # Path 1 only, right after npm has the version. A tag made with the
+        # workflow token does not start another run, so this can't publish
+        # twice.
+        if: steps.v.outputs.publish == 'true' && github.ref_type != 'tag'
+        run: |
+          TAG="v$VERSION"
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null; then
+            echo "$TAG already exists"
+            exit 0
+          fi
+          git config user.name "XRPL-Utilities"
+          git config user.email "xrpl-utilities@proton.me"
+          git tag -a "$TAG" -m "$VERSION"
+          git push origin "$TAG"
+        env:
+          VERSION: ${{ steps.v.outputs.version }}
+
       - name: Sync server.json version to tag
+        if: steps.v.outputs.publish == 'true'
         # mcp-publisher cross-verifies that the version in server.json
         # matches the version in the published npm package. Rather than
         # editing server.json on every release, regenerate the version
         # fields from the tag right before publishing to the registry.
         run: |
-          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          TAG_VERSION="$VERSION"
           python3 - <<PY
           import json
           p = "server.json"
@@ -101,14 +161,18 @@ jobs:
           json.dump(d, open(p, "w"), indent=2)
           PY
           cat server.json
+        env:
+          VERSION: ${{ steps.v.outputs.version }}
 
       - name: Install mcp-publisher
+        if: steps.v.outputs.publish == 'true'
         run: |
           curl -fsSL https://github.com/modelcontextprotocol/registry/releases/download/v1.7.9/mcp-publisher_linux_amd64.tar.gz \
             | tar xz -C /usr/local/bin mcp-publisher
           mcp-publisher --help | head -1
 
       - name: Publish to MCP Registry
+        if: steps.v.outputs.publish == 'true'
         # GitHub OIDC auth: registry verifies the workflow's id-token
         # claim against the io.github.XRPL-Utilities/* namespace.
         # No PAT or secret required.
