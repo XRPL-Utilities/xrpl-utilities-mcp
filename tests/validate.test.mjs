@@ -139,3 +139,22 @@ test("an AggregateError-wrapped DNS failure still retries", async () => {
     assert.equal(r.checked, true, `${r.service} should have been read on the retry`);
   }
 });
+
+// XR-Ledger publishes endpoints as a list of {method, path} objects. The
+// check stringified each entry to "[object Object]", so every Ledger tool
+// read as undeclared.
+test("a list of endpoint objects is matched by path", async () => {
+  const results = await withFetch(
+    async (url) => {
+      const body = String(url).includes("ledger.")
+        ? { schema_version: "1.5.0", endpoints: [{ method: "POST", path: "/statement" }, { method: "GET", path: "/schema" }] }
+        : { schema_version: "0.0.0-test", endpoints: {} };
+      return new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } });
+    },
+    () => validateAllServices({ strict: false }),
+  );
+  const ledger = results.find((r) => r.service === "XR-Ledger");
+  assert.ok(ledger, "XR-Ledger is registered");
+  assert.deepEqual(ledger.errors, []);
+  assert.equal(ledger.ok, true);
+});

@@ -1,8 +1,8 @@
 # @xrpl-utilities/mcp
 
 [Model Context Protocol](https://modelcontextprotocol.io) server for the
-XRPL-Utilities™ portfolio. Exposes the read endpoints of all six
-services as MCP tools so AI agents can discover and use them, either
+XRPL-Utilities™ portfolio. Exposes the read endpoints of every
+service as MCP tools so AI agents can discover and use them, either
 locally via stdio (Claude Desktop, MCP Inspector, etc.) or remotely
 via the hosted endpoint at `mcp.xrpl-utilities.io`.
 
@@ -16,10 +16,12 @@ via the hosted endpoint at `mcp.xrpl-utilities.io`.
 | **XR-Trust** | Directory and drill-down for the XRPL permissioned-asset stack (XLS-70/80/81, XLS-40 DID), operator index, jurisdictions and permissioned-domain activity | `xrpl_trust_list_domains` (paid), `xrpl_trust_get_domain` (paid), `xrpl_trust_credential_issuers` (paid), `xrpl_trust_recent_events` (free), `xrpl_trust_list_operators_index` (free), `xrpl_trust_operator_drilldown` (paid), `xrpl_trust_operator_attribution` (free), `xrpl_trust_usage_summary` (free), `xrpl_trust_jurisdictions` (free), `xrpl_trust_permissioned_activity` (free) |
 | **XR-Vault** | Real-world asset tracker: per-issuer supply, mint and burn flow, AMM pool exposure | `xrpl_vault_scan` (paid), `xrpl_vault_daily_flow` (free) |
 | **XR-Flows** | XRP ETF AUM against XRPL exchange flow, launch impact and cross-border flow | `xrpl_flows_scan` (paid), `xrpl_flows_correlation` (free), `xrpl_flows_cross_border_flow` (free), `xrpl_flows_launch_impact` (free), `xrpl_flows_etf_flow_summary` (free) |
+| **XR-Ledger** | Account statements for one XRPL address or a watchlist of up to 10: monthly XRP in/out, fees, activity categories, token net change, counterparties | `xrpl_ledger_statement` (paid), `xrpl_ledger_schema` (free) |
 | **XR-Desk** | Composite desk briefing: market posture, positioning, RLUSD health, supply pressure, RWA market | `xrpl_desk_briefing` (free) |
 
-44 tools total: 15 paid, 29 free, all read-only.
+46 tools total: 16 paid, 30 free, all read-only.
 Paid calls settle over x402 v2 in XRP or RLUSD on XRPL, or USDC on Base.
+XR-Ledger accepts the two XRPL rails only.
 
 ## Auth model
 
@@ -93,7 +95,7 @@ Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_
 }
 ```
 
-Restart Claude Desktop. The 44 tools should appear with the prefix
+Restart Claude Desktop. The 46 tools should appear with the prefix
 `xrpl_`. Ask Claude to "scan the wallet rXXX with XR-Sentinel" or
 "list permissioned domains on XRPL" and the tool calls flow through.
 
@@ -136,7 +138,7 @@ tool definitions interactively.
 Set `STRICT_VALIDATE=1` to treat a manifest that could not be read as
 drift instead of a warning. It is off by default because Railway restarts
 `ON_FAILURE`: failing closed on boot would crash-loop the endpoint, and
-take the other five healthy services' tools down with it, whenever one
+take the other healthy services' tools down with it, whenever one
 backend is cold. Either way, a service whose manifest was not read logs
 `NOT CHECKED` - "could not check" is never reported as "all clear".
 

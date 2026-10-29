@@ -308,6 +308,22 @@ function valueProblem(spec: JSONSchema7, value: unknown): string | null {
     if (typeof value === "boolean") return null;
     return value === "true" || value === "false" ? null : "must be a boolean";
   }
+  if (spec.type === "array") {
+    if (!Array.isArray(value)) return "must be an array";
+    if (typeof spec.minItems === "number" && value.length < spec.minItems) {
+      return `must have at least ${spec.minItems} item(s)`;
+    }
+    if (typeof spec.maxItems === "number" && value.length > spec.maxItems) {
+      return `must have at most ${spec.maxItems} item(s)`;
+    }
+    if (spec.items) {
+      for (let i = 0; i < value.length; i++) {
+        const p = valueProblem(spec.items, value[i]);
+        if (p) return `item ${i} ${p}`;
+      }
+    }
+    return null;
+  }
   if (spec.type === "string") {
     if (typeof value !== "string") return "must be a string";
     if (spec.pattern && !new RegExp(spec.pattern).test(value)) {

@@ -105,3 +105,17 @@ test("numeric args sent as strings are still accepted", async () => {
     assert.match(seen[0].url, /days=7/);
   });
 });
+
+// XR-Ledger takes a list of 1-10 addresses. Array args were not validated at
+// all before, so a malformed address or an 11-wallet list went upstream.
+test("array args are validated item by item and by length", async () => {
+  const bad = [
+    { address: "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH" },
+    { address: ["not-an-address"] },
+    { address: [] },
+    { address: Array(11).fill("rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH") },
+  ];
+  for (const args of bad) {
+    await assert.rejects(() => dispatchTool("xrpl_ledger_statement", args), /invalid value for address/);
+  }
+});

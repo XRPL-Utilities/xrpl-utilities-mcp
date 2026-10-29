@@ -148,10 +148,11 @@ async function validateService(
     }
   }
 
-  // Endpoint-presence check. The manifest's endpoints block is a flat
-  // map of names to URLs/paths. We consider a tool valid if ANY entry
-  // in the manifest contains the tool's path as a substring (covers
-  // entries like '/events?since=<event_id>&limit=...').
+  // Endpoint-presence check. Most manifests carry endpoints as a flat map
+  // of names to URLs/paths; XR-Ledger's is a list of {method, path, ...}
+  // objects. We consider a tool valid if ANY entry in the manifest contains
+  // the tool's path as a substring (covers entries like
+  // '/events?since=<event_id>&limit=...').
   const endpoints = manifest["endpoints"];
   if (endpoints && typeof endpoints === "object") {
     // Normalize both sides: strip path params, collapse repeated slashes,
@@ -159,8 +160,12 @@ async function validateService(
     // entry that keeps the param placeholder.
     const norm = (s: string) =>
       s.replace(/\{[^}]+\}/g, "").replace(/\/{2,}/g, "/").replace(/\/+$/, "");
+    const entryText = (v: unknown): string =>
+      v && typeof v === "object" && typeof (v as { path?: unknown }).path === "string"
+        ? (v as { path: string }).path
+        : String(v);
     const flat = Object.values(endpoints as Record<string, unknown>)
-      .map((v) => norm(String(v)))
+      .map((v) => norm(entryText(v)))
       .join(" ");
     for (const tool of svc.tools) {
       const skeleton = norm(tool.path);

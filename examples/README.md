@@ -47,7 +47,7 @@ That settlement is a real validated `Payment` of 0.08773 XRP to the Sentinel
 treasury — [view on XRPScan](https://xrpscan.com/tx/08AF105FB1EB2CDD189843AAB14B1E059252DCA0EC46715FD0070ABFBA5D6D6D).
 No human in the loop: 402 → presigned XRPL payment → t54 verify+settle → data.
 
-Every XR-* service (Sentinel, Pulse, Telemetry, Trust, Vault, Flows) speaks the
+Every XR-* service (Sentinel, Pulse, Telemetry, Trust, Vault, Flows, Ledger) speaks the
 same x402 flow, so the same pattern pays any of them — or use the
 [MCP server](https://www.npmjs.com/package/@xrpl-utilities/mcp), which wraps the
 paid endpoints as agent tools.
