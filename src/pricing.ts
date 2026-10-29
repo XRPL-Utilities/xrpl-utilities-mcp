@@ -33,8 +33,22 @@ const TIERED_TOOLS: Record<string, ToolPricing> = {
   },
 };
 
+/**
+ * Steps of the Telemetry async-invoice flow that carry no charge of their
+ * own. The flow is quote -> pay -> status -> results: one $0.10 purchase made
+ * at the quote step. Marking status and results as paid told clients that
+ * read `_meta.pricing` that one snapshot cost $0.30.
+ */
+export const NON_CHARGING_FLOW_STEPS: ReadonlySet<string> = new Set([
+  "xrpl_telemetry_get_status",
+  "xrpl_telemetry_get_results",
+]);
+
 export function pricingFor(name: string, authMode: AuthMode): ToolPricing {
   if (authMode === "free") return { paid: false, priceUsd: 0 };
+  if (NON_CHARGING_FLOW_STEPS.has(name)) {
+    return { paid: false, priceUsd: 0, settlement: "xrpl_invoice", note: "covered_by_get_quote" };
+  }
   const tiered = TIERED_TOOLS[name];
   if (tiered) return tiered;
   if (authMode === "async_invoice") {

@@ -34,17 +34,7 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { buildServer } from "../server.js";
 import { SERVICES, ALL_TOOLS } from "../services/index.js";
 import { SERVER_VERSION } from "../version.js";
-import { pricingFor } from "../pricing.js";
-
-/**
- * Paid tools that do not carry their own charge. The Telemetry async-invoice
- * flow is quote -> pay -> status -> results: one $0.10 purchase, three tools.
- * Only the quote step is a priced resource.
- */
-const NON_CHARGING_FLOW_STEPS = new Set([
-  "xrpl_telemetry_get_status",
-  "xrpl_telemetry_get_results",
-]);
+import { NON_CHARGING_FLOW_STEPS, pricingFor } from "../pricing.js";
 
 const RATE_WINDOW_MS = 60_000;
 const RATE_LIMIT_PER_WINDOW = 60; // generous; agents typically fire bursts
