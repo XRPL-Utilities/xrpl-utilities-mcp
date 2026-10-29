@@ -16,7 +16,7 @@
  * On dev / first-launch we tolerate manifest fetch failures (so the MCP
  * server still starts when networking is flaky). STRICT_VALIDATE=1 turns a
  * fetch failure into an error instead of a warning; it is opt-in, NOT the
- * default for HTTP, because railway.json restarts ON_FAILURE and failing
+ * default for HTTP, because Railway restarts the service ON_FAILURE and failing
  * closed would crash-loop the whole endpoint - taking the other five healthy
  * services' tools with it - whenever one backend is cold at boot.
  *
