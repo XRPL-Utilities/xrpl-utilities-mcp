@@ -84,9 +84,9 @@ export function buildServer(opts: DispatchOptions = {}): Server {
       // If the backend co-signed its OWN output, build a 2-party receipt:
       // caller = this MCP, provider = that backend. Split the provider
       // attestation out of the displayed result and into _meta.hSealReceipt.
-      // Two shapes carry it: `hSealAttestation` (backend attaches it via its
-      // own /attest call) or `_hSeal` (the H-Seal v0.3.0 proxy sidecar merges
-      // it into every response). Accept either; prefer hSealAttestation.
+      // Two shapes carry it: `_hSeal` (what every backend signs in-process
+      // today with hseal_sign.py) or the older `hSealAttestation`. Accept
+      // either; prefer hSealAttestation.
       let displayResult: unknown = result;
       let hSealReceipt: HSealReceiptResult | undefined;
       if (
