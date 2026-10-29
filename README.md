@@ -142,15 +142,18 @@ backend is cold. Either way, a service whose manifest was not read logs
 
 ## Releases
 
-Releases are cut by tag push. The `Release` workflow builds, validates
-that `package.json` version matches the tag, publishes to npm with
-sigstore provenance, then mirrors the same version to the official
-MCP Registry via GitHub OIDC (no extra secrets needed).
+Bump the version and merge it to `main`. The `Release` workflow sees a
+version npm doesn't have yet, builds and tests, publishes to npm with
+sigstore provenance, creates the `v<version>` tag, then mirrors the same
+version to the official MCP Registry via GitHub OIDC (no extra secrets
+needed).
 
 ```bash
-npm version patch       # or minor / major
-git push --follow-tags  # pushes commit + tag, CI does the rest
+npm version patch --no-git-tag-version   # or minor / major
+# commit, open a PR, merge to main; CI does the rest
 ```
+
+Pushing a `v*` tag still works too (`npm version patch && git push --follow-tags`).
 
 The published artifact appears at
 [npmjs.com/package/@xrpl-utilities/mcp](https://www.npmjs.com/package/@xrpl-utilities/mcp)
