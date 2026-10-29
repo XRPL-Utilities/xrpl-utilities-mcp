@@ -5,7 +5,7 @@
  * monthly periods: XRP in/out/net from balance deltas, fees, activity
  * categories, per-token net change and top counterparties, with plain-English
  * statement lines. $0.10 USD per call via x402, payable in RLUSD or XRP on
- * XRPL only (Ledger does not offer the Base rail).
+ * XRPL, or USDC on Base.
  *
  * The free /statement/preview is not wrapped: it is IP-throttled for the
  * XR-Desk browser surface, and every caller of the hosted MCP would share the
@@ -24,7 +24,7 @@ export const ledger: ServiceDef = {
     {
       name: "xrpl_ledger_statement",
       description:
-        "Paid ($0.10 USD, RLUSD or XRP on XRPL; no Base rail). " +
+        "Paid ($0.10 USD, RLUSD or XRP on XRPL, or USDC on Base). " +
         "Account statement for 1-10 XRPL addresses rolled into one: monthly periods with " +
         "XRP in/out/net, fees, activity categories, per-token net change (exact decimal " +
         "strings), top counterparties and plain-English statement lines.",
