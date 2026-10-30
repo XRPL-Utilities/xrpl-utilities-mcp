@@ -35,6 +35,12 @@ import { timingSafeEqual } from "node:crypto";
 import { findToolOwner } from "./services/index.js";
 import type { JSONSchema7 } from "./jsonschema.js";
 import { SERVER_VERSION } from "./version.js";
+import {
+  decodeB64Json,
+  encodeForBackend,
+  normalizeSignatureHeader,
+  paymentRequiredFor,
+} from "./x402mcp.js";
 
 
 function timingSafeStringEqual(a: string, b: string): boolean {
@@ -81,16 +87,43 @@ export interface DispatchOptions {
   isBypassBlocked?: () => boolean;
 }
 
+/** What a tool call produced, with the x402 pieces split out for MCP `_meta`. */
+export interface DispatchOutcome {
+  /** Same value dispatchTool has always returned. */
+  result: unknown;
+  /** Upstream HTTP status. */
+  status: number;
+  /** The upstream 402 as an MCP PaymentRequired object (resource = this tool). */
+  paymentRequired?: Record<string, unknown>;
+  /** Decoded PAYMENT-RESPONSE settlement from a paid 2xx. */
+  paymentResponse?: Record<string, unknown>;
+}
+
 /**
- * Run a single tool call. Throws on missing tool / network error /
- * non-2xx upstream response. Caller (the MCP server adapter) is
- * responsible for catching and converting to an MCP-shaped error.
+ * Run a single tool call. Throws on missing tool / network error.
+ * A non-2xx upstream comes back as a `{_error, status, response}` result.
+ * Caller (the MCP server adapter) is responsible for catching and
+ * converting to an MCP-shaped error.
  */
 export async function dispatchTool(
   toolName: string,
   args: Record<string, unknown>,
   opts: DispatchOptions = {},
 ): Promise<unknown> {
+  return (await dispatchToolDetailed(toolName, args, opts)).result;
+}
+
+/**
+ * dispatchTool plus the x402 details. `metaPayment` is the client's
+ * params._meta["x402/payment"] (standard x402-over-MCP); when present on a
+ * paid tool it takes precedence over the payment_signature argument.
+ */
+export async function dispatchToolDetailed(
+  toolName: string,
+  args: Record<string, unknown>,
+  opts: DispatchOptions = {},
+  metaPayment?: unknown,
+): Promise<DispatchOutcome> {
   const owner = findToolOwner(toolName);
   if (!owner) {
     throw new Error(`unknown tool: ${toolName}`);
@@ -151,10 +184,14 @@ export async function dispatchTool(
 
   const callerPaymentSig = stringArg(args.payment_signature);
   const callerBypassKey = stringArg(args._bypass_key);
+  // The route URL the backend itself would name (no query string).
+  const routeUrl = baseUrl + path;
 
   if (tool.authMode === "inline_x402") {
-    if (callerPaymentSig) {
-      headers["PAYMENT-SIGNATURE"] = callerPaymentSig;
+    if (metaPayment !== undefined && metaPayment !== null) {
+      headers["PAYMENT-SIGNATURE"] = encodeForBackend(metaPayment, toolName, routeUrl);
+    } else if (callerPaymentSig) {
+      headers["PAYMENT-SIGNATURE"] = normalizeSignatureHeader(callerPaymentSig, toolName, routeUrl);
     } else if (callerBypassKey) {
       // Check BEFORE comparing. Gating only the failure branch would leave the
       // compare reachable, so a blocked caller who finally guesses right still
@@ -227,17 +264,25 @@ export async function dispatchTool(
   // Surface 402 challenges + 4xx/5xx errors as structured errors so
   // the LLM can reason over them and retry with a payment_signature.
   if (!res.ok) {
-    return {
+    const paymentRequired =
+      res.status === 402 && tool.authMode === "inline_x402"
+        ? paymentRequiredFor(toolName, parsed, res.headers.get("payment-required"))
+        : undefined;
+    const result = {
       _error: true,
       status: res.status,
       response: parsed,
       hint:
         res.status === 402
-          ? "This endpoint requires x402 payment. Sign a payment matching one of the entries in 'accepts' (RLUSD or XRP on XRPL, or USDC on Base), base64-JSON-encode it, and pass as payment_signature. Prefer a stablecoin entry: RLUSD and USDC are quoted at a flat USD price, while the XRP entry is converted at spot and is absent whenever XRP/USD cannot be verified."
+          ? "This endpoint requires x402 payment. Sign a payment matching one of the entries in 'accepts' (RLUSD or XRP on XRPL, or USDC on Base), base64-JSON-encode it, and pass as payment_signature (or send the payload object in _meta[\"x402/payment\"]). Prefer a stablecoin entry: RLUSD and USDC are quoted at a flat USD price, while the XRP entry is converted at spot and is absent whenever XRP/USD cannot be verified."
           : undefined,
     };
+    return { result, status: res.status, paymentRequired };
   }
-  return parsed;
+  const paymentResponse = decodeB64Json(
+    res.headers.get("payment-response") ?? res.headers.get("x-payment-response"),
+  );
+  return { result: parsed, status: res.status, paymentResponse };
 }
 
 function stringArg(v: unknown): string | undefined {

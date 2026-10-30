@@ -13,11 +13,12 @@ import {
   ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { ALL_TOOLS, SERVICES } from "./services/index.js";
-import { dispatchTool, type DispatchOptions } from "./dispatch.js";
+import { dispatchToolDetailed, type DispatchOptions } from "./dispatch.js";
 import { attest } from "./hSeal.js";
 import { buildReceipt, type HSealReceiptResult } from "./hSealReceipt.js";
 import { pricingFor } from "./pricing.js";
 import { SERVER_VERSION } from "./version.js";
+import { META_PAYMENT, META_PAYMENT_RESPONSE } from "./x402mcp.js";
 
 const SERVER_NAME = "xrpl-utilities";
 
@@ -35,7 +36,7 @@ const BYPASS_ARG = {
     type: "string" as const,
     description:
       "Operator-issued bypass key. Only useful if the server operator gave you one; " +
-      "ignored unless it matches the server's MCP_BYPASS_KEY. Omit it and pay via payment_signature instead.",
+      "ignored unless it matches the server's MCP_BYPASS_KEY. Omit it and pay via _meta[\"x402/payment\"] or payment_signature instead.",
   },
 };
 
@@ -67,10 +68,30 @@ export function buildServer(opts: DispatchOptions = {}): Server {
 
   server.setRequestHandler(CallToolRequestSchema, async (req) => {
     const args = (req.params.arguments ?? {}) as Record<string, unknown>;
+    const reqMeta = req.params._meta as Record<string, unknown> | undefined;
     try {
       const startedMs = Date.now();
-      const result = await dispatchTool(req.params.name, args, opts);
+      const outcome = await dispatchToolDetailed(
+        req.params.name, args, opts, reqMeta?.[META_PAYMENT],
+      );
       const endedMs = Date.now();
+      const result = outcome.result;
+
+      // Standard x402-over-MCP: a payment challenge (unpaid, or a payment the
+      // backend refused) is an error result carrying PaymentRequired in
+      // structuredContent and as JSON in the first text item. The second item
+      // keeps the plain-language hint for LLM callers using payment_signature.
+      if (outcome.paymentRequired) {
+        const hint = (result as { hint?: unknown }).hint;
+        return {
+          isError: true,
+          structuredContent: outcome.paymentRequired,
+          content: [
+            { type: "text" as const, text: JSON.stringify(outcome.paymentRequired) },
+            ...(typeof hint === "string" ? [{ type: "text" as const, text: hint }] : []),
+          ],
+        };
+      }
 
       // Co-sign the (request, response) pair so the caller can anchor a
       // tamper-evident H-Seal receipt carrying our attestation that we served
@@ -116,6 +137,7 @@ export function buildServer(opts: DispatchOptions = {}): Server {
       const meta: Record<string, unknown> = {};
       if (attestation) meta.hSeal = attestation;
       if (hSealReceipt) meta.hSealReceipt = hSealReceipt;
+      if (outcome.paymentResponse) meta[META_PAYMENT_RESPONSE] = outcome.paymentResponse;
 
       return {
         content: [
