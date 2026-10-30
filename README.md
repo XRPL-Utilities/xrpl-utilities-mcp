@@ -27,18 +27,20 @@ Paid calls settle over x402 v2 in XRP or RLUSD on XRPL, or USDC on Base.
 The MCP server is a **stateless passthrough proxy**. It does not hold
 wallets, manage user accounts, or subsidize calls.
 
-For paid tools (every endpoint at $0.10 USD), the caller supplies a
-`payment_signature` argument: a base64-JSON-encoded x402 v2 payment
-header signing an XRPL Payment that matches one of the requirements
-returned by an unauthenticated probe. The server forwards it as the
-`PAYMENT-SIGNATURE` header on the underlying call.
+Paid tools (every endpoint at $0.10 USD) speak standard x402 over MCP.
+Call a paid tool without payment and you get a tool result with
+`isError: true` and the x402 `PaymentRequired` object in
+`structuredContent`. It lists three payment options: XRP and RLUSD on
+XRPL via the t54 facilitator, or USDC on Base mainnet via the Coinbase
+x402 facilitator. Sign one and retry the same call with the payment
+payload object in `_meta["x402/payment"]`. A settled call returns the
+settlement in `_meta["x402/payment-response"]`. Any x402 MCP client
+library handles this loop for you.
 
-If you don't supply `payment_signature`, the underlying service
-returns its real `402 Payment Required` challenge listing three
-payment options: XRP and RLUSD on XRPL via the t54 facilitator, or
-USDC on Base mainnet via the Coinbase x402 facilitator. The MCP
-server passes that back to the LLM as a structured error so it can
-sign and retry against whichever rail its wallet supports.
+Clients that can't set `_meta` can still pass the payload as a
+`payment_signature` argument, base64-JSON-encoded. Either way the
+server forwards it as the `PAYMENT-SIGNATURE` header on the underlying
+call, and the backend verifies and settles it.
 
 Operators can set `MCP_BYPASS_KEY` on the server to enable an opt-in
 bypass for friendlies / demos. The caller passes the matching key as
@@ -114,7 +116,8 @@ To avoid 402 challenges on every call, your client needs to:
    `accepts` entries from a prior probe. XRPL rails take an
    XRPL Payment; the Base rail takes an EIP-3009
    `transferWithAuthorization`.
-3. Pass the base64-JSON-encoded envelope as `payment_signature`.
+3. Send the payload in `_meta["x402/payment"]`, or base64-JSON-encode it
+   and pass it as `payment_signature`.
 
 Reference implementations:
 [`x402-xrpl`](https://pypi.org/project/x402-xrpl/) covers the
