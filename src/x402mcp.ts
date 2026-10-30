@@ -12,10 +12,11 @@
  * translates between the MCP shapes and the HTTP PAYMENT-SIGNATURE /
  * PAYMENT-REQUIRED / PAYMENT-RESPONSE headers.
  *
- * Resource URLs: a challenge names `${MCP_PUBLIC_URL}#<tool>` so a paying
- * client echoes the tool it bought. Before forwarding, a Base (eip155) payload
- * keeps that URL, which is the key the backend uses to attach the MCP-tool
- * Bazaar entry when it settles with Coinbase. Any other network gets the
+ * Resource URLs: a challenge names the bare MCP endpoint, as the Bazaar spec
+ * expects. Before forwarding, a Base (eip155) payload is pointed at
+ * `${MCP_PUBLIC_URL}#<tool>`, which is the key the backend uses to attach the
+ * MCP-tool Bazaar entry when it settles with Coinbase (the backend sends
+ * Coinbase the bare URL again). Any other network gets the
  * backend's own route URL back, so the XRPL rail sees exactly what it sees
  * from a direct caller. The resource is metadata outside the signed
  * authorization, so rewriting it does not touch what the buyer signed.
@@ -98,21 +99,96 @@ export function normalizeSignatureHeader(
   }
 }
 
+// Transport-only arguments: never part of a tool's advertised input.
+const TRANSPORT_ARGS = new Set(["payment_signature", "_bypass_key"]);
+
+export interface BazaarToolInfo {
+  name: string;
+  description: string;
+  inputSchema: object;
+}
+
+/**
+ * The spec `extensions.bazaar` declaration for one MCP tool
+ * (x402 specs/extensions/bazaar.md, `input.type: "mcp"`). Must match what
+ * the backends attach at settle time (x402_baseline._bazaar_mcp_extension).
+ */
+export function mcpBazaarExtension(tool: BazaarToolInfo): Json {
+  const schema = { ...(tool.inputSchema as Json) };
+  if (isObject(schema.properties)) {
+    schema.properties = Object.fromEntries(
+      Object.entries(schema.properties).filter(([k]) => !TRANSPORT_ARGS.has(k)),
+    );
+  }
+  if (Array.isArray(schema.required)) {
+    schema.required = schema.required.filter((k) => !TRANSPORT_ARGS.has(String(k)));
+  }
+  return {
+    info: {
+      input: {
+        type: "mcp",
+        toolName: tool.name,
+        inputSchema: schema,
+        transport: "streamable-http",
+        description: tool.description,
+      },
+      output: { type: "json" },
+    },
+    schema: {
+      $schema: "https://json-schema.org/draft/2020-12/schema",
+      type: "object",
+      properties: {
+        input: {
+          type: "object",
+          properties: {
+            type: { type: "string", const: "mcp" },
+            toolName: { type: "string" },
+            inputSchema: { type: "object" },
+            transport: { type: "string", enum: ["streamable-http"] },
+            description: { type: "string" },
+            example: { type: "object" },
+          },
+          required: ["type", "toolName", "inputSchema"],
+          additionalProperties: false,
+        },
+        output: {
+          type: "object",
+          properties: { type: { type: "string" }, example: {} },
+          required: ["type"],
+        },
+      },
+      required: ["input"],
+    },
+  };
+}
+
 /**
  * Build the PaymentRequired object an MCP client sees from the backend's 402.
  * Prefers the JSON body; falls back to the PAYMENT-REQUIRED header.
+ *
+ * The backend's 402 describes its HTTP route. Here the resource is the bare
+ * MCP endpoint and the Bazaar declaration is the MCP tool, as the spec's MCP
+ * example shows; a passed-through `type: "http"` declaration at an MCP URL
+ * kept the tools out of the Bazaar on 2026-10-30.
  */
 export function paymentRequiredFor(
   toolName: string,
   body: unknown,
   header: string | null,
+  tool?: BazaarToolInfo,
 ): Json | undefined {
   const source = isObject(body) && Array.isArray(body.accepts) ? body : decodeB64Json(header);
   if (!source || !Array.isArray(source.accepts)) return undefined;
   const prior = isObject(source.resource) ? source.resource : {};
-  return {
+  const extensions: Json = isObject(source.extensions) ? { ...source.extensions } : {};
+  if (tool) extensions.bazaar = mcpBazaarExtension(tool);
+  else delete extensions.bazaar;
+  const out: Json = {
     ...source,
     x402Version: typeof source.x402Version === "number" ? source.x402Version : 2,
-    resource: { ...prior, url: toolResourceUrl(toolName) },
+    resource: { ...prior, url: MCP_PUBLIC_URL },
   };
+  if (Object.keys(extensions).length) out.extensions = extensions;
+  else delete out.extensions;
+  return out;
 }

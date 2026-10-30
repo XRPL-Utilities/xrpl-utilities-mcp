@@ -14,6 +14,7 @@ import { encodeForBackend, MCP_PUBLIC_URL } from "../dist/x402mcp.js";
 const CHALLENGE = {
   x402Version: 2,
   resource: { url: "https://vault.xrpl-utilities.io/scan", description: "Vault", mimeType: "application/json" },
+  extensions: { bazaar: { info: { input: { type: "http", method: "POST" } }, schema: {} } },
   accepts: [{ scheme: "exact", network: "eip155:8453", amount: "100000", asset: "0xA", payTo: "0xB" }],
 };
 const SETTLED = { success: true, transaction: "0xabc", network: "eip155:8453", payer: "0xC" };
@@ -81,8 +82,15 @@ test("a 402 becomes a PaymentRequired naming the MCP tool", async () => {
   await withPaidUpstream(async (base) => {
     const out = await dispatchToolDetailed("xrpl_vault_scan", {}, { baseUrlOverride: () => base });
     assert.equal(out.status, 402);
-    assert.equal(out.paymentRequired.resource.url, `${MCP_PUBLIC_URL}#xrpl_vault_scan`);
+    assert.equal(out.paymentRequired.resource.url, MCP_PUBLIC_URL);
     assert.deepEqual(out.paymentRequired.accepts, CHALLENGE.accepts);
+    // The backend's http declaration must not leak out at the MCP URL.
+    const input = out.paymentRequired.extensions.bazaar.info.input;
+    assert.equal(input.type, "mcp");
+    assert.equal(input.toolName, "xrpl_vault_scan");
+    assert.equal(input.transport, "streamable-http");
+    assert.ok(!("payment_signature" in (input.inputSchema.properties ?? {})));
+    assert.ok(!(input.inputSchema.required ?? []).includes("payment_signature"));
   });
 });
 
@@ -118,7 +126,8 @@ test("end to end over MCP: challenge, pay via _meta, settlement in _meta", async
     try {
       const unpaid = await client.callTool({ name: "xrpl_vault_scan", arguments: {} });
       assert.equal(unpaid.isError, true);
-      assert.equal(unpaid.structuredContent.resource.url, `${MCP_PUBLIC_URL}#xrpl_vault_scan`);
+      assert.equal(unpaid.structuredContent.resource.url, MCP_PUBLIC_URL);
+      assert.equal(unpaid.structuredContent.extensions.bazaar.info.input.type, "mcp");
       assert.deepEqual(JSON.parse(unpaid.content[0].text), unpaid.structuredContent);
 
       const paid = await client.callTool({
