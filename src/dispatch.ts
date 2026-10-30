@@ -266,7 +266,7 @@ export async function dispatchToolDetailed(
   if (!res.ok) {
     const paymentRequired =
       res.status === 402 && tool.authMode === "inline_x402"
-        ? paymentRequiredFor(toolName, parsed, res.headers.get("payment-required"))
+        ? paymentRequiredFor(toolName, parsed, res.headers.get("payment-required"), tool)
         : undefined;
     const result = {
       _error: true,
