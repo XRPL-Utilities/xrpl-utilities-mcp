@@ -9,7 +9,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { dispatchToolDetailed } from "../dist/dispatch.js";
 import { buildServer } from "../dist/server.js";
-import { encodeForBackend, MCP_PUBLIC_URL } from "../dist/x402mcp.js";
+import { encodeForBackend, MCP_PUBLIC_URL, paymentRequiredFor } from "../dist/x402mcp.js";
 
 const CHALLENGE = {
   x402Version: 2,
@@ -92,6 +92,18 @@ test("a 402 becomes a PaymentRequired naming the MCP tool", async () => {
     assert.ok(!("payment_signature" in (input.inputSchema.properties ?? {})));
     assert.ok(!(input.inputSchema.required ?? []).includes("payment_signature"));
   });
+});
+
+// The backends lead with RLUSD on XRPL. Every MCP server the Coinbase Bazaar
+// lists leads with Base, so the MCP challenge puts Base first (2026-10-31).
+test("the MCP challenge lists Base options first and drops none", () => {
+  const xrplRlusd = { scheme: "exact", network: "xrpl:0", asset: "RLUSD" };
+  const xrplXrp = { scheme: "exact", network: "xrpl:0", asset: "XRP" };
+  const base = { scheme: "exact", network: "eip155:8453", asset: "0xA" };
+  const out = paymentRequiredFor("xrpl_vault_scan", { ...CHALLENGE, accepts: [xrplRlusd, xrplXrp, base] }, null);
+  assert.deepEqual(out.accepts, [base, xrplRlusd, xrplXrp]);
+  const noBase = paymentRequiredFor("xrpl_vault_scan", { ...CHALLENGE, accepts: [xrplRlusd, xrplXrp] }, null);
+  assert.deepEqual(noBase.accepts, [xrplRlusd, xrplXrp]);
 });
 
 test("_meta payment wins over payment_signature and the settlement is decoded", async () => {
