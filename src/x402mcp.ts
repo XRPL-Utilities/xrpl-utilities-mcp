@@ -163,6 +163,19 @@ export function mcpBazaarExtension(tool: BazaarToolInfo): Json {
 }
 
 /**
+ * Base (eip155) options first, everything else after, each group in the
+ * backend's order. The backends lead with RLUSD on XRPL; every MCP server
+ * the Coinbase Bazaar lists leads with Base, and Coinbase is the only
+ * facilitator that lists MCP tools. Reordering drops nothing, so a client
+ * that picks by network still finds its rail.
+ */
+export function baseFirst(accepts: unknown[]): unknown[] {
+  const isBase = (a: unknown) =>
+    isObject(a) && typeof a.network === "string" && a.network.startsWith("eip155:");
+  return [...accepts.filter(isBase), ...accepts.filter((a) => !isBase(a))];
+}
+
+/**
  * Build the PaymentRequired object an MCP client sees from the backend's 402.
  * Prefers the JSON body; falls back to the PAYMENT-REQUIRED header.
  *
@@ -187,6 +200,7 @@ export function paymentRequiredFor(
     ...source,
     x402Version: typeof source.x402Version === "number" ? source.x402Version : 2,
     resource: { ...prior, url: MCP_PUBLIC_URL },
+    accepts: baseFirst(source.accepts),
   };
   if (Object.keys(extensions).length) out.extensions = extensions;
   else delete out.extensions;
