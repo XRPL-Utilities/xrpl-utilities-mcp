@@ -148,8 +148,8 @@ export async function dispatchToolDetailed(
     // Unconditional, schema-independent. "." / ".." / a slash survive
     // encodeURIComponent's intent because the WHATWG URL parser normalizes the
     // built URL afterwards: /domain/.. collapses to the service root, and the
-    // paid drill-down tool then returns the root banner as a success - which,
-    // with H-Seal on, gets co-signed as an answer to the tool that was called.
+    // paid drill-down tool then returns the root banner as a success, charged
+    // as an answer to the tool that was called.
     const raw = String(args[key]);
     if (raw === "" || raw === "." || raw === ".." || /[/\\]/.test(raw)) {
       throw new Error(`tool ${toolName}: invalid value for path parameter ${key}`);
