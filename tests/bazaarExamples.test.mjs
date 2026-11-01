@@ -9,7 +9,7 @@ import Ajv from "ajv";
 import Ajv2020 from "ajv/dist/2020.js";
 import { ALL_TOOLS } from "../dist/services/index.js";
 import { BAZAAR_EXAMPLES } from "../dist/bazaarExamples.js";
-import { mcpBazaarExtension, paymentRequiredFor } from "../dist/x402mcp.js";
+import { MCP_ICON_URL, MCP_SERVICE_NAME, mcpBazaarExtension, mcpServiceTags, paymentRequiredFor } from "../dist/x402mcp.js";
 
 const paid = ALL_TOOLS.filter((t) => t.authMode === "inline_x402");
 
@@ -57,4 +57,28 @@ test("the example is a copy, so a caller cannot mutate the registry", () => {
   const ext = mcpBazaarExtension(t);
   ext.info.input.example.injected = true;
   assert.equal(BAZAAR_EXAMPLES[t.name].injected, undefined);
+});
+
+test("a paid tool's challenge carries the Bazaar service name, tags and icon", () => {
+  // Added 2026-11-01. Must match x402_baseline.bazaar_service_metadata(svc, mcp=True)
+  // in the backends, which attach the same values when the payment settles.
+  const backend = {
+    x402Version: 2,
+    resource: {
+      url: "https://pulse.xrpl-utilities.io/events/recent",
+      serviceName: "XR-Pulse",
+      tags: ["xrpl", "xrp", "on-chain", "events", "whale-alerts"],
+      iconUrl: "https://xrpl-utilities.com/assets/img/xr-pulse-512.webp",
+    },
+    accepts: [{ network: "xrpl:0" }],
+  };
+  const pr = paymentRequiredFor(paid[0].name, backend, null, paid[0]);
+  assert.equal(pr.resource.serviceName, MCP_SERVICE_NAME);
+  assert.deepEqual(pr.resource.tags, ["xrpl", "xrp", "on-chain", "mcp", "events"]);
+  assert.equal(pr.resource.iconUrl, MCP_ICON_URL);
+  assert.ok(MCP_SERVICE_NAME.length <= 32 && /^https:\/\/[^@]+\.(png|jpe?g|webp|gif)$/.test(MCP_ICON_URL));
+  // A backend with no tags still yields the shared ones; junk and duplicates are dropped.
+  assert.deepEqual(mcpServiceTags(undefined), ["xrpl", "xrp", "on-chain", "mcp"]);
+  assert.deepEqual(mcpServiceTags(["XRPL", "caf\u00e9", "x".repeat(33), 7, "rwa", "etf"]),
+    ["xrpl", "xrp", "on-chain", "mcp", "rwa"]);
 });

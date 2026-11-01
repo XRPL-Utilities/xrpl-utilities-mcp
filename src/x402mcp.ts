@@ -197,6 +197,32 @@ export function baseFirst(accepts: unknown[]): unknown[] {
 }
 
 /**
+ * Bazaar service metadata for a paid tool's challenge (x402 bazaar spec,
+ * "Service Metadata on `resource`"). It mirrors x402_baseline.py
+ * bazaar_service_metadata(service, mcp=True) in the backends, which attach the
+ * same values to the settle request: the MCP's name and icon, the three shared
+ * tags, "mcp", and the backend's first topical tag.
+ */
+export const MCP_SERVICE_NAME = "XRPL-Utilities MCP";
+export const MCP_ICON_URL = "https://xrpl-utilities.com/assets/img/logo-512.webp";
+const COMMON_TAGS = ["xrpl", "xrp", "on-chain", "mcp"];
+const MAX_TAGS = 5;
+
+export function mcpServiceTags(backendTags: unknown): string[] {
+  const out = [...COMMON_TAGS];
+  const seen = new Set(out);
+  const extra = Array.isArray(backendTags) ? backendTags : [];
+  for (const t of extra) {
+    if (out.length >= MAX_TAGS) break;
+    if (typeof t !== "string" || !/^[\x20-\x7e]{1,32}$/.test(t)) continue;
+    if (seen.has(t.toLowerCase())) continue;
+    seen.add(t.toLowerCase());
+    out.push(t);
+  }
+  return out;
+}
+
+/**
  * Build the PaymentRequired object an MCP client sees from the backend's 402.
  * Prefers the JSON body; falls back to the PAYMENT-REQUIRED header.
  *
@@ -217,10 +243,16 @@ export function paymentRequiredFor(
   const extensions: Json = isObject(source.extensions) ? { ...source.extensions } : {};
   if (tool) extensions.bazaar = mcpBazaarExtension(tool);
   else delete extensions.bazaar;
+  const resource: Json = { ...prior, url: challengeResourceUrl(toolName) };
+  if (tool) {
+    resource.serviceName = MCP_SERVICE_NAME;
+    resource.tags = mcpServiceTags(prior.tags);
+    resource.iconUrl = MCP_ICON_URL;
+  }
   const out: Json = {
     ...source,
     x402Version: typeof source.x402Version === "number" ? source.x402Version : 2,
-    resource: { ...prior, url: challengeResourceUrl(toolName) },
+    resource,
     accepts: baseFirst(source.accepts),
   };
   if (Object.keys(extensions).length) out.extensions = extensions;
