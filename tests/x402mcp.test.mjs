@@ -154,3 +154,19 @@ test("end to end over MCP: challenge, pay via _meta, settlement in _meta", async
     }
   });
 });
+
+test("challenge resource is bare unless the tool is in BAZAAR_FRAGMENT_TOOLS", () => {
+  const accepts = [{ scheme: "exact", network: "eip155:8453", asset: "0xA" }];
+  const prev = process.env.BAZAAR_FRAGMENT_TOOLS;
+  try {
+    delete process.env.BAZAAR_FRAGMENT_TOOLS;
+    assert.equal(paymentRequiredFor("xrpl_pulse_recent_events", { ...CHALLENGE, accepts }, null).resource.url, MCP_PUBLIC_URL);
+    process.env.BAZAAR_FRAGMENT_TOOLS = " xrpl_pulse_recent_events ,";
+    assert.equal(paymentRequiredFor("xrpl_pulse_recent_events", { ...CHALLENGE, accepts }, null).resource.url,
+      `${MCP_PUBLIC_URL}#xrpl_pulse_recent_events`);
+    assert.equal(paymentRequiredFor("xrpl_vault_scan", { ...CHALLENGE, accepts }, null).resource.url, MCP_PUBLIC_URL);
+  } finally {
+    if (prev === undefined) delete process.env.BAZAAR_FRAGMENT_TOOLS;
+    else process.env.BAZAAR_FRAGMENT_TOOLS = prev;
+  }
+});
