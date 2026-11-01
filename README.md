@@ -44,7 +44,9 @@ call, and the backend verifies and settles it.
 
 Operators can set `MCP_BYPASS_KEY` on the server to enable an opt-in
 bypass for friendlies / demos. The caller passes the matching key as
-`_bypass_key` in the tool args.
+`_bypass_key` in the tool args. It is not listed in the public tool
+schemas, so send it from a client that does not validate arguments
+against `tools/list` (a raw JSON-RPC call works).
 
 The hosted endpoint budgets failed `_bypass_key` attempts per caller
 separately from, and far more tightly than, ordinary requests: a 60

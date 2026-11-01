@@ -23,6 +23,8 @@
  * authorization, so rewriting it does not touch what the buyer signed.
  */
 
+import { bazaarExample } from "./bazaarExamples.js";
+
 export const MCP_PUBLIC_URL = "https://mcp.xrpl-utilities.io/mcp";
 export const META_PAYMENT = "x402/payment";
 export const META_PAYMENT_RESPONSE = "x402/payment-response";
@@ -139,6 +141,8 @@ export function mcpBazaarExtension(tool: BazaarToolInfo): Json {
   if (Array.isArray(schema.required)) {
     schema.required = schema.required.filter((k) => !TRANSPORT_ARGS.has(String(k)));
   }
+  // The Bazaar indexes an MCP tool by calling it with input.example.
+  const example = bazaarExample(tool.name);
   return {
     info: {
       input: {
@@ -147,6 +151,7 @@ export function mcpBazaarExtension(tool: BazaarToolInfo): Json {
         inputSchema: schema,
         transport: "streamable-http",
         description: tool.description,
+        ...(example ? { example } : {}),
       },
       output: { type: "json" },
     },
