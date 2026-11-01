@@ -59,28 +59,6 @@ per service rather than sharing one portfolio-wide key. Bucket keying
 depends on `TRUST_PROXY_HOPS` matching the real number of proxies in
 front of the container - see `.env.example`.
 
-### H-Seal receipt co-signing (optional)
-
-Set `PROVIDER_IDENTITY` (our CAIP-10, e.g. `xrpl:0:r...`) and
-`PROVIDER_KEY_RAW` (32-byte ed25519 seed, hex) on the server to have every
-tool response co-signed with an [H-Seal](https://h-seal.xr-utilities.com)
-provider attestation. The attestation rides on the tool result's
-`_meta.hSeal`, so a caller can anchor a tamper-evident, independently
-verifiable on-chain receipt of the interaction. When either var is unset the
-feature is inert and responses are unchanged. Never hardcode the key — env
-only.
-
-When a backend co-signs its own output, the MCP also builds a 2-party
-receipt (`_meta.hSealReceipt`). That signs with the operator key, so set
-`HSEAL_ALLOWED_PROVIDERS` to the CAIP-10 identities of the XR-* backends
-you are willing to vouch for. Without it any provider that proves it holds
-the key for the identity it names is accepted. The `responseHash` is always
-recomputed from the delivered body; `requestHash` stays provider-asserted
-(the backends hash a synthetic request object the MCP cannot reproduce) and
-the result says so via `requestHashBasis`. See `src/hSeal.ts` and the ops runbook
-[`docs/hseal-provider.md`](docs/hseal-provider.md) (current identity, the
-ed25519 curve gotcha, and how to rotate/recover the key).
-
 ## Use it
 
 ### Locally via Claude Desktop (stdio)

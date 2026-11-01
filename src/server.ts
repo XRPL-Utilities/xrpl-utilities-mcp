@@ -14,8 +14,6 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { ALL_TOOLS, SERVICES } from "./services/index.js";
 import { dispatchToolDetailed, type DispatchOptions } from "./dispatch.js";
-import { attest } from "./hSeal.js";
-import { buildReceipt, type HSealReceiptResult } from "./hSealReceipt.js";
 import { pricingFor } from "./pricing.js";
 import { SERVER_VERSION } from "./version.js";
 import { META_PAYMENT, META_PAYMENT_RESPONSE } from "./x402mcp.js";
@@ -54,11 +52,9 @@ export function buildServer(opts: DispatchOptions = {}): Server {
     const args = (req.params.arguments ?? {}) as Record<string, unknown>;
     const reqMeta = req.params._meta as Record<string, unknown> | undefined;
     try {
-      const startedMs = Date.now();
       const outcome = await dispatchToolDetailed(
         req.params.name, args, opts, reqMeta?.[META_PAYMENT],
       );
-      const endedMs = Date.now();
       const result = outcome.result;
 
       // Standard x402-over-MCP: a payment challenge (unpaid, or a payment the
@@ -77,57 +73,14 @@ export function buildServer(opts: DispatchOptions = {}): Server {
         };
       }
 
-      // Co-sign the (request, response) pair so the caller can anchor a
-      // tamper-evident H-Seal receipt carrying our attestation that we served
-      // it. Strip transport-only secrets from the signed request so the
-      // attestation stays reproducible and never folds a payment signature or
-      // bypass key into the receipt hash. No-op when H-Seal env is unset.
-      const signedArgs: Record<string, unknown> = { ...args };
-      delete signedArgs["payment_signature"];
-      delete signedArgs["_bypass_key"];
-
-      // If the backend co-signed its OWN output, build a 2-party receipt:
-      // caller = this MCP, provider = that backend. Split the provider
-      // attestation out of the displayed result and into _meta.hSealReceipt.
-      // Two shapes carry it: `_hSeal` (what every backend signs in-process
-      // today with hseal_sign.py) or the older `hSealAttestation`. Accept
-      // either; prefer hSealAttestation.
-      let displayResult: unknown = result;
-      let hSealReceipt: HSealReceiptResult | undefined;
-      if (
-        result &&
-        typeof result === "object" &&
-        ("hSealAttestation" in result || "_hSeal" in result)
-      ) {
-        const { hSealAttestation, _hSeal, ...clean } = result as Record<string, unknown>;
-        displayResult = clean;
-        hSealReceipt = await buildReceipt({
-          serviceEndpoint: "https://mcp.xrpl-utilities.io",
-          attestation: hSealAttestation ?? _hSeal,
-          // The body we actually deliver. buildReceipt re-hashes it and refuses
-          // to sign a receipt whose responseHash we cannot corroborate.
-          responseBody: clean,
-          startedAt: Math.floor(startedMs / 1000),
-          completedAt: Math.floor(endedMs / 1000),
-          latencyMs: endedMs - startedMs,
-        });
-      }
-
-      const attestation = await attest(
-        { tool: req.params.name, args: signedArgs },
-        displayResult,
-      );
-
       const meta: Record<string, unknown> = {};
-      if (attestation) meta.hSeal = attestation;
-      if (hSealReceipt) meta.hSealReceipt = hSealReceipt;
       if (outcome.paymentResponse) meta[META_PAYMENT_RESPONSE] = outcome.paymentResponse;
 
       return {
         content: [
           {
             type: "text" as const,
-            text: typeof displayResult === "string" ? displayResult : JSON.stringify(displayResult, null, 2),
+            text: typeof result === "string" ? result : JSON.stringify(result, null, 2),
           },
         ],
         ...(Object.keys(meta).length ? { _meta: meta } : {}),
