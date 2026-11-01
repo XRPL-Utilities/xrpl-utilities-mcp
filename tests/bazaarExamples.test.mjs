@@ -20,6 +20,17 @@ test("every paid tool has a Bazaar example, and no example is orphaned", () => {
   for (const k of Object.keys(BAZAAR_EXAMPLES)) assert.ok(names.has(k), `example for unknown or unpaid tool ${k}`);
 });
 
+// 2026-11-01: the two paid tools with an empty example ({}) and no
+// advertised arguments were the only two that did not list after a settled
+// payment; no MCP entry in the Bazaar has an empty example.
+test("no example is empty, and every paid tool advertises an argument", () => {
+  for (const t of paid) {
+    assert.ok(Object.keys(BAZAAR_EXAMPLES[t.name]).length > 0, `${t.name} has an empty example`);
+    const props = mcpBazaarExtension(t).info.input.inputSchema.properties ?? {};
+    assert.ok(Object.keys(props).length > 0, `${t.name} advertises no arguments`);
+  }
+});
+
 test("each example validates against its tool's input schema", () => {
   const ajv = new Ajv({ strict: false, allErrors: true });
   for (const t of paid) {

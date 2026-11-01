@@ -79,10 +79,21 @@ export const trust: ServiceDef = {
       description:
         "Paid ($0.10 USD). " +
         "All credential issuers across PermissionedDomains: address, label, " +
-        "referencing domain count, and credential types issued.",
+        "referencing domain count, and credential types issued. " +
+        "Use limit and offset to page; omit limit for every issuer.",
       inputSchema: {
         type: "object",
         properties: {
+          limit: {
+            type: "integer",
+            minimum: 1,
+            maximum: 500,
+          },
+          offset: {
+            type: "integer",
+            minimum: 0,
+            default: 0,
+          },
           payment_signature: {
             type: "string",
             description: "x402 payment header.",

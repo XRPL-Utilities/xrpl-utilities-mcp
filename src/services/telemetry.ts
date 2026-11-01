@@ -32,10 +32,21 @@ export const telemetry: ServiceDef = {
       description:
         "Paid ($0.10 USD). " +
         "One-shot XRPL macro snapshot: supply breakdown, liquidity flows, AMM state, " +
-        "derived Active Float model, and utility floor price.",
+        "derived Active Float model, and utility floor price. " +
+        "Pass sections to get only some blocks.",
       inputSchema: {
         type: "object",
         properties: {
+          sections: {
+            type: "array",
+            description:
+              "Optional. Return only these blocks of the snapshot; omit for all of it.",
+            items: {
+              type: "string",
+              enum: ["supply", "liquidity", "amm", "derived_models", "utility_floor", "settlement"],
+            },
+            minItems: 1,
+          },
           payment_signature: {
             type: "string",
             description: "x402 payment header.",
