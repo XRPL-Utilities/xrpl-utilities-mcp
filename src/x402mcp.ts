@@ -13,7 +13,8 @@
  * PAYMENT-REQUIRED / PAYMENT-RESPONSE headers.
  *
  * Resource URLs: a challenge names the bare MCP endpoint, as the Bazaar spec
- * expects. Before forwarding, a Base (eip155) payload is pointed at
+ * expects, unless the tool is listed in BAZAAR_FRAGMENT_TOOLS (see
+ * fragmentTools). Before forwarding, a Base (eip155) payload is pointed at
  * `${MCP_PUBLIC_URL}#<tool>`, which is the key the backend uses to attach the
  * MCP-tool Bazaar entry when it settles with Coinbase (the backend sends
  * Coinbase the bare URL again). Any other network gets the
@@ -38,6 +39,21 @@ function isObject(v: unknown): v is Json {
 
 export function toolResourceUrl(toolName: string): string {
   return `${MCP_PUBLIC_URL}#${toolName}`;
+}
+
+/**
+ * Tools whose challenge names `${MCP_PUBLIC_URL}#<tool>` instead of the bare
+ * endpoint. Every MCP entry the Bazaar lists uses that form
+ * (x402-foundation/x402#4075), so this lets one tool test it alone.
+ * Comma-separated tool names in BAZAAR_FRAGMENT_TOOLS; empty by default.
+ */
+export function fragmentTools(): Set<string> {
+  const raw = process.env["BAZAAR_FRAGMENT_TOOLS"] ?? "";
+  return new Set(raw.split(",").map((t) => t.trim()).filter(Boolean));
+}
+
+function challengeResourceUrl(toolName: string): string {
+  return fragmentTools().has(toolName) ? toolResourceUrl(toolName) : MCP_PUBLIC_URL;
 }
 
 /** Decode a base64 JSON header value. Returns undefined on anything malformed. */
@@ -199,7 +215,7 @@ export function paymentRequiredFor(
   const out: Json = {
     ...source,
     x402Version: typeof source.x402Version === "number" ? source.x402Version : 2,
-    resource: { ...prior, url: MCP_PUBLIC_URL },
+    resource: { ...prior, url: challengeResourceUrl(toolName) },
     accepts: baseFirst(source.accepts),
   };
   if (Object.keys(extensions).length) out.extensions = extensions;
