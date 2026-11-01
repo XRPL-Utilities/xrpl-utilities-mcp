@@ -1,4 +1,7 @@
-# H-Index re-registration — how to submit `h-index-listing.json`
+# H-Index re-registration: how to submit `h-index-listing.json`
+
+> Status 2026-11-01: the `signature` field in this draft is empty, and the
+> H-Index search endpoint below returned HTTP 404 that day. Treat it as parked.
 
 The live H-Index listing (`id 0.0.10601198/46`) showed **0 tools** because the
 signed `mcpManifest` was empty/wrong-shaped and the payload carried a
@@ -7,12 +10,13 @@ is the corrected, signable payload.
 
 ## What was fixed
 - `mcpManifest` is now a **JSON string** (a `JSON.stringify` of the live
-  `tools/list` snapshot — 41 tools with `inputSchema`), not a nested object.
+  `tools/list` snapshot, 41 tools with `inputSchema`), not a nested object.
 - The `_registration` help block is **removed**.
 - Same `endpointUrl` (`https://mcp.xrpl-utilities.io/mcp`, with `/mcp`) and same
   `ownerAccountId` → this is a **free re-register** (no $10 fee).
-- Added `slaReceiptRef: "0.0.10500472"` so discovery surfaces "publisher anchors
-  proof-of-execution via H-Seal" (we now co-sign every tool response).
+- No `slaReceiptRef`. H-Seal was retired on 2026-11-01, so the listing makes no
+  receipt or proof-of-execution claim. Paid calls carry only the standard x402
+  PAYMENT-RESPONSE receipt.
 - `category` kept as `data` (accurate for the 6-product portfolio). Change to
   another enum if you prefer: `security automation finance infra ...`.
 
@@ -27,14 +31,14 @@ still advertised the old six-ticker text.
 node scripts/regen_h_index_listing.mjs
 ```
 
-It reads the **deployed** server (`endpointUrl`), not local source — so **deploy
+It reads the **deployed** server (`endpointUrl`), not local source, so **deploy
 first and confirm the live descriptions are the ones you want**, otherwise you
 just re-bake stale text. The script refuses to write when nothing changed, prints
 which tools were added/removed/reworded, and clears `signature` (any prior
 signature is void the moment the manifest changes). It never touches `issuedAt`,
 because that must be the unix time at signing.
 
-## To submit (only you can sign — Claude has no key)
+## To submit (only the owner can sign)
 The owner is a **Base/EVM** account, so signing is **EIP-712**:
 
 1. Set `issuedAt` to the current unix time at signing (freshness window).
