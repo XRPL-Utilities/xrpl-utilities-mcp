@@ -1,7 +1,5 @@
-// The dispatcher honours _bypass_key, but every tool schema is closed
-// (additionalProperties: false). If the advertised schema doesn't declare it,
-// any client that validates args before sending refuses to send it and the
-// documented operator bypass is unusable.
+// What tools/list advertises: payment_signature on paid tools, and never the
+// operator-only _bypass_key (removed from public schemas 2026-11-01).
 
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -23,24 +21,23 @@ async function listTools() {
   }
 }
 
-test("every inline_x402 tool advertises both payment_signature and _bypass_key", async () => {
+test("every inline_x402 tool advertises payment_signature", async () => {
   const tools = await listTools();
   const paid = ALL_TOOLS.filter((t) => t.authMode === "inline_x402").map((t) => t.name);
   assert.ok(paid.length > 0);
   for (const name of paid) {
     const props = tools.find((t) => t.name === name)?.inputSchema?.properties ?? {};
     assert.ok(props.payment_signature, `${name} should advertise payment_signature`);
-    assert.ok(props._bypass_key, `${name} should advertise _bypass_key`);
   }
 });
 
-test("free and async_invoice tools do not advertise _bypass_key", async () => {
-  // Those paths never consult callerBypassKey, so advertising it would be a
-  // false contract.
+test("no tool advertises the operator-only _bypass_key", async () => {
+  // A public schema must not invite strangers to guess an operator secret.
+  // The dispatcher still honours the argument when an operator sends it.
   const tools = await listTools();
-  for (const t of ALL_TOOLS.filter((t) => t.authMode !== "inline_x402")) {
-    const props = tools.find((x) => x.name === t.name)?.inputSchema?.properties ?? {};
-    assert.equal(props._bypass_key, undefined, `${t.name} should not advertise _bypass_key`);
+  for (const t of tools) {
+    assert.equal(t.inputSchema?.properties?._bypass_key, undefined, `${t.name} advertises _bypass_key`);
+    assert.ok(!JSON.stringify(t).includes("_bypass_key"), `${t.name} mentions _bypass_key`);
   }
 });
 

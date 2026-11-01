@@ -23,22 +23,12 @@ import { META_PAYMENT, META_PAYMENT_RESPONSE } from "./x402mcp.js";
 const SERVER_NAME = "xrpl-utilities";
 
 /**
- * The dispatcher honours `_bypass_key`, but every tool schema declares
- * `additionalProperties: false` — so a client that validates args against the
- * advertised schema before sending (the normal SDK behaviour) refuses to send
- * it and the documented operator bypass is simply unusable. Declaring it here
- * keeps the closed-schema guarantee and makes the arg legal. Injected only on
- * inline_x402 tools: the async_invoice and free tools never consult it, so
- * advertising it there would be a false contract. Never in `required`.
+ * `_bypass_key` (operator-only) is honoured by the dispatcher but is NOT
+ * advertised in tools/list: a public schema should not invite strangers to
+ * guess an operator secret, and directory crawlers read these schemas. The
+ * server does not validate arguments against the advertised schema, so an
+ * operator can still send it from a raw JSON-RPC client.
  */
-const BYPASS_ARG = {
-  _bypass_key: {
-    type: "string" as const,
-    description:
-      "Operator-issued bypass key. Only useful if the server operator gave you one; " +
-      "ignored unless it matches the server's MCP_BYPASS_KEY. Omit it and pay via _meta[\"x402/payment\"] or payment_signature instead.",
-  },
-};
 
 export function buildServer(opts: DispatchOptions = {}): Server {
   const server = new Server(
@@ -55,13 +45,7 @@ export function buildServer(opts: DispatchOptions = {}): Server {
     tools: ALL_TOOLS.map((t) => ({
       name: t.name,
       description: t.description,
-      inputSchema:
-        t.authMode === "inline_x402"
-          ? {
-              ...t.inputSchema,
-              properties: { ...(t.inputSchema.properties ?? {}), ...BYPASS_ARG },
-            }
-          : t.inputSchema,
+      inputSchema: t.inputSchema,
       _meta: { pricing: pricingFor(t.name, t.authMode) },
     })),
   }));
