@@ -16,3 +16,11 @@ test("no H-Seal code or dependency remains", () => {
     assert.ok(!src.includes("hseal"), `${f} still mentions hseal`);
   }
 });
+
+test("the H-Index listing draft makes no H-Seal or receipt claim", () => {
+  const raw = readFileSync(new URL("../h-index-listing.json", import.meta.url), "utf8");
+  const listing = JSON.parse(raw);
+  assert.ok(!("slaReceiptRef" in listing), "slaReceiptRef points at the retired H-Seal topic");
+  assert.ok(!/h-?seal/i.test(listing.description), "description still pitches H-Seal");
+  assert.ok(!/co-sign/i.test(raw), "listing still claims co-signed responses");
+});
