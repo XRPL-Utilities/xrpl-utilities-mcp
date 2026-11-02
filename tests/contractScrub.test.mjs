@@ -87,3 +87,36 @@ test("contract_scrub.mjs declares no second retry classifier", () => {
   assert.equal(/TRANSIENT_CODES\s*=/.test(src), false,
     "a local TRANSIENT_CODES table is back in contract_scrub.mjs");
 });
+
+// 2026-11-02: the scrub failed on every agent-paid data route (Pulse
+// rwa-summary and desk-briefing, Telemetry settlement/series) because public
+// CI has no visitor pass. A well-formed 402 offer is a pass; anything else
+// still fails.
+import { gatedOutcome } from "../scripts/contract_scrub.mjs";
+
+const OFFER = { accepts: [{ payTo: "rTreasury", amount: "0.01" }, { payTo: "0xabc", amount: "10000" }] };
+
+test("a valid 402 offer on a data route counts as up and priced", () => {
+  assert.equal(gatedOutcome(402, OFFER), "agent_paid");
+});
+
+test("a 402 with no usable offer is not a pass", () => {
+  for (const body of [null, {}, { accepts: [] }, { accepts: [{}] }, { accepts: [{ amount: "1" }] }]) {
+    assert.equal(gatedOutcome(402, body), null);
+  }
+});
+
+test("403 passes only on routes marked site-only", () => {
+  assert.equal(gatedOutcome(403, {}, { siteOnly: true }), "site_only");
+  assert.equal(gatedOutcome(403, {}), null);
+  assert.equal(gatedOutcome(500, OFFER), null);
+  assert.equal(gatedOutcome(200, OFFER), null);
+});
+
+test("address discovery reads the free Sentinel registry, not a paid route", () => {
+  const src = readFileSync(new URL("../scripts/contract_scrub.mjs", import.meta.url), "utf8");
+  const i = src.indexOf("A live XRPL address for the address-keyed paid tools");
+  const block = src.slice(i, i + 900);
+  assert.match(block, /sentinel\.xrpl-utilities\.io\/registry\/rwa-issuers/);
+  assert.doesNotMatch(block, /fetchJson\("https:\/\/pulse\.xrpl-utilities\.io\/stats\/rwa-summary"\)/);
+});
