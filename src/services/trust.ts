@@ -15,7 +15,7 @@ export const trust: ServiceDef = {
   label: "XR-Trust",
   baseUrl: "https://trust.xrpl-utilities.io",
   manifestUrl: "https://trust.xrpl-utilities.io/agents.json",
-  knownSchemaVersions: ["2026-13", "2026-14", "2026-15", "2026-16", "2026-17", "2026-18", "2026-19", "2026-20", "2026-21", "2026-22", "2026-23", "2026-24", "2026-25", "2026-26", "2026-27", "2026-28", "2026-29", "2026-30", "2026-31", "2026-32", "2026-33", "2026-34", "2026-35", "2026-36", "2026-37", "2026-38", "2026-39", "2026-40", "2026-41", "2026-42", "2026-43"],
+  knownSchemaVersions: ["2026-13", "2026-14", "2026-15", "2026-16", "2026-17", "2026-18", "2026-19", "2026-20", "2026-21", "2026-22", "2026-23", "2026-24", "2026-25", "2026-26", "2026-27", "2026-28", "2026-29", "2026-30", "2026-31", "2026-32", "2026-33", "2026-34", "2026-35", "2026-36", "2026-37", "2026-38", "2026-39", "2026-40", "2026-41", "2026-42", "2026-43", "2026-44"],
   tools: [
     {
       name: "xrpl_trust_list_domains",
@@ -108,12 +108,16 @@ export const trust: ServiceDef = {
     {
       name: "xrpl_trust_recent_events",
       description:
-        "Free. " +
+        "Paid ($0.01 USD). " +
         "XLS-70/80/81 lifecycle event stream: domain creates/deletes, credential " +
         "activity, permissioned offers and AMM events. Cursor-paginated.",
       inputSchema: {
         type: "object",
         properties: {
+          payment_signature: {
+            type: "string",
+            description: "x402 payment header.",
+          },
           since: {
             type: "string",
             description: "Event-id cursor, e.g. 'trust_lifecycle_42'.",
@@ -133,7 +137,7 @@ export const trust: ServiceDef = {
       },
       method: "GET",
       path: "/events",
-      authMode: "free",
+      authMode: "inline_x402",
     },
     {
       name: "xrpl_trust_list_operators_index",
@@ -196,12 +200,16 @@ export const trust: ServiceDef = {
     {
       name: "xrpl_trust_operator_attribution",
       description:
-        "Free. " +
+        "Paid ($0.01 USD). " +
         "Institutional attribution for one PermissionedDomain operator: parent funder, " +
         "credential types, gated assets, plain-English summary, and confidence tier.",
       inputSchema: {
         type: "object",
         properties: {
+          payment_signature: {
+            type: "string",
+            description: "x402 payment header.",
+          },
           operator_address: {
             type: "string",
             description: "XRPL r-address of the operator.",
@@ -213,17 +221,21 @@ export const trust: ServiceDef = {
       },
       method: "GET",
       path: "/permissioned-domains/operators/{operator_address}/attribution",
-      authMode: "free",
+      authMode: "inline_x402",
     },
     {
       name: "xrpl_trust_usage_summary",
       description:
-        "Free. " +
+        "Paid ($0.01 USD). " +
         "Ecosystem-wide PermissionedDomain activity aggregate: domain count, " +
         "operator count, credential and market event totals over a configurable window.",
       inputSchema: {
         type: "object",
         properties: {
+          payment_signature: {
+            type: "string",
+            description: "x402 payment header.",
+          },
           window_days: {
             type: "integer",
             description: "Trailing days.",
@@ -236,27 +248,38 @@ export const trust: ServiceDef = {
       },
       method: "GET",
       path: "/permissioned-domains/usage-summary",
-      authMode: "free",
+      authMode: "inline_x402",
     },
     {
       name: "xrpl_trust_jurisdictions",
       description:
-        "Free. " +
+        "Paid ($0.01 USD). " +
         "Jurisdiction rollup across XRPL's permissioned stack: per-country operator " +
         "and issuer counts with an unattributed bucket.",
       inputSchema: {
         type: "object",
-        properties: {},
+        properties: {
+          payment_signature: {
+            type: "string",
+            description: "x402 payment header.",
+          },
+          addresses_limit: {
+            type: "integer",
+            description: "Cap the unattributed address list (default: all).",
+            minimum: 1,
+            maximum: 1000,
+          },
+        },
         additionalProperties: false,
       },
       method: "GET",
       path: "/jurisdictions",
-      authMode: "free",
+      authMode: "inline_x402",
     },
     {
       name: "xrpl_trust_permissioned_activity",
       description:
-        "Free. " +
+        "Paid ($0.01 USD). " +
         "Newest-first feed of permissioned-domain ledger activity: XLS-70/80 domain and " +
         "credential lifecycle, XLS-81 permissioned-DEX offers and AMM ops, and Payments made " +
         "inside a domain. Consecutive same-account quote runs are collapsed into one row with a " +
@@ -268,6 +291,10 @@ export const trust: ServiceDef = {
       inputSchema: {
         type: "object",
         properties: {
+          payment_signature: {
+            type: "string",
+            description: "x402 payment header.",
+          },
           limit: { type: "integer", description: "Rows to return.", minimum: 1, maximum: 200, default: 50 },
           category: {
             type: "string",
@@ -284,7 +311,7 @@ export const trust: ServiceDef = {
       },
       method: "GET",
       path: "/activity",
-      authMode: "free",
+      authMode: "inline_x402",
     },
   ],
 };

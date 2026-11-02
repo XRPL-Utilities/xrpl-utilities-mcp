@@ -45,8 +45,8 @@ export const NON_CHARGING_FLOW_STEPS: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * Pulse data routes: $0.01 per call for agents (XR-Pulse schema 1.116.0,
- * PULSE_DATA_GATE). Free on xrpl-utilities.com, which this server never sees.
+ * Data routes: $0.01 per call for agents (XR-Pulse schema 1.116.0,
+ * PULSE_DATA_GATE, and the same gate on Telemetry, Trust and Flows). Free on xrpl-utilities.com, which this server never sees.
  */
 export const DATA_ROUTE_TOOLS: ReadonlySet<string> = new Set([
   "xrpl_pulse_ripple_counterparties",
@@ -62,6 +62,18 @@ export const DATA_ROUTE_TOOLS: ReadonlySet<string> = new Set([
   "xrpl_pulse_rlusd_distribution",
   "xrpl_desk_briefing",
   "xrpl_pulse_token_health",
+  // Telemetry 1.32.0, Trust 2026-44 and Flows 1.32.0 (<SVC>_DATA_GATE).
+  "xrpl_telemetry_settlement_series",
+  "xrpl_telemetry_dex_pair_volume",
+  "xrpl_trust_operator_attribution",
+  "xrpl_trust_usage_summary",
+  "xrpl_trust_permissioned_activity",
+  "xrpl_trust_recent_events",
+  "xrpl_trust_jurisdictions",
+  "xrpl_flows_correlation",
+  "xrpl_flows_etf_flow_summary",
+  "xrpl_flows_cross_border_flow",
+  "xrpl_flows_launch_impact",
 ]);
 
 export function pricingFor(name: string, authMode: AuthMode): ToolPricing {

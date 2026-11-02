@@ -25,7 +25,7 @@ export const telemetry: ServiceDef = {
   label: "XR-Telemetry",
   baseUrl: "https://telemetry.xrpl-utilities.io",
   manifestUrl: "https://telemetry.xrpl-utilities.io/agents.json",
-  knownSchemaVersions: ["1.2.0", "1.3.0", "1.4.0", "1.4.1", "1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.11.1", "1.11.2", "1.12.0", "1.13.0", "1.14.0", "1.15.0", "1.16.0", "1.17.0", "1.18.0", "1.19.0", "1.20.0", "1.21.0", "1.21.1", "1.21.2", "1.21.3", "1.21.4", "1.21.5", "1.21.6", "1.21.7", "1.21.8", "1.21.9", "1.22.0", "1.23.0", "1.24.0", "1.25.0", "1.26.0", "1.27.0", "1.28.0", "1.29.0", "1.30.0", "1.30.1", "1.31.0"],
+  knownSchemaVersions: ["1.2.0", "1.3.0", "1.4.0", "1.4.1", "1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.11.1", "1.11.2", "1.12.0", "1.13.0", "1.14.0", "1.15.0", "1.16.0", "1.17.0", "1.18.0", "1.19.0", "1.20.0", "1.21.0", "1.21.1", "1.21.2", "1.21.3", "1.21.4", "1.21.5", "1.21.6", "1.21.7", "1.21.8", "1.21.9", "1.22.0", "1.23.0", "1.24.0", "1.25.0", "1.26.0", "1.27.0", "1.28.0", "1.29.0", "1.30.0", "1.30.1", "1.31.0", "1.32.0"],
   tools: [
     {
       name: "xrpl_telemetry_snapshot",
@@ -136,13 +136,17 @@ export const telemetry: ServiceDef = {
     {
       name: "xrpl_telemetry_settlement_series",
       description:
-        "Free. " +
+        "Paid ($0.01 USD). " +
         "Bucketed XRPL settlement volume time-series (daily / weekly / monthly) " +
         "with USD totals, payment counts, XRP drops, and RLUSD value per bucket. " +
         "Newest first, UTC-aligned. For charting or change-point detection.",
       inputSchema: {
         type: "object",
         properties: {
+          payment_signature: {
+            type: "string",
+            description: "x402 payment header.",
+          },
           bucket: {
             type: "string",
             enum: ["daily", "weekly", "monthly"],
@@ -160,17 +164,21 @@ export const telemetry: ServiceDef = {
       },
       method: "GET",
       path: "/settlement/series",
-      authMode: "free",
+      authMode: "inline_x402",
     },
     {
       name: "xrpl_telemetry_dex_pair_volume",
       description:
-        "Free. " +
+        "Paid ($0.01 USD). " +
         "Per-pair DEX volume on XRPL: 24h and 7d volume, fill counts, orderbook vs AMM " +
         "source split, and annualized run rate.",
       inputSchema: {
         type: "object",
         properties: {
+          payment_signature: {
+            type: "string",
+            description: "x402 payment header.",
+          },
           pair: {
             type: "string",
             description: "Pair filter, e.g. 'XRP/RLUSD'. Omit for all.",
@@ -180,7 +188,7 @@ export const telemetry: ServiceDef = {
       },
       method: "GET",
       path: "/stats/dex-pair-volume",
-      authMode: "free",
+      authMode: "inline_x402",
     },
   ],
 };
