@@ -30,7 +30,29 @@ export const BAZAAR_EXAMPLES: Readonly<Record<string, Readonly<Record<string, un
   xrpl_vault_scan: { issuer: "RLUSD" },
   xrpl_flows_scan: { ticker: "XRPC" },
   xrpl_ledger_statement: { address: ["rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De"], since_days: 30 },
+  xrpl_pulse_ripple_counterparties: { limit: 50 },
+  xrpl_pulse_cex_attribution: { limit: 50 },
+  xrpl_pulse_xrpl_primitives: { window_days: 30 },
+  xrpl_pulse_exchange_flow_delta: { days: 30 },
+  xrpl_pulse_exchange_net_flow: { hours: 24 },
+  xrpl_pulse_entity_positioning: { days: 7 },
+  xrpl_pulse_rlusd_distribution: { days: 7 },
+  xrpl_pulse_token_health: { code: "RLUSD", limit: 10 },
 };
+
+/**
+ * Paid tools whose backend route takes no arguments at all, so there is no
+ * honest example to give. The Bazaar has not listed tools with an empty
+ * example (2026-11-01), so these sell over x402 but may stay unlisted until
+ * the route grows a real optional parameter.
+ */
+export const NO_ARGUMENT_PAID_TOOLS: ReadonlySet<string> = new Set([
+  "xrpl_pulse_ripple_topology",
+  "xrpl_pulse_whale_flow_24h",
+  "xrpl_pulse_rwa_summary",
+  "xrpl_pulse_escrow_calendar",
+  "xrpl_desk_briefing",
+]);
 
 export function bazaarExample(toolName: string): Record<string, unknown> | undefined {
   const ex = BAZAAR_EXAMPLES[toolName];
