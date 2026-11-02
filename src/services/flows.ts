@@ -161,5 +161,33 @@ export const flows: ServiceDef = {
       path: "/stats/etf-flow-summary",
       authMode: "inline_x402",
     },
+    {
+      name: "xrpl_flows_etf_candidates",
+      description:
+        "Paid ($0.01 USD). " +
+        "XRP fund filings and candidates found in the SEC ticker index that are not yet tracked, with review status.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          "status": {
+            "type": "string",
+            "enum": [
+              "unverified",
+              "promoted",
+              "dismissed"
+            ],
+            "description": "Filter by review status (optional)."
+          },
+          "payment_signature": {
+            "type": "string",
+            "description": "x402 payment header."
+          }
+        },
+        additionalProperties: false,
+      },
+      method: "GET",
+      path: "/stats/etf-candidates",
+      authMode: "inline_x402",
+    },
   ],
 };

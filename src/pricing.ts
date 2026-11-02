@@ -74,6 +74,20 @@ export const DATA_ROUTE_TOOLS: ReadonlySet<string> = new Set([
   "xrpl_flows_etf_flow_summary",
   "xrpl_flows_cross_border_flow",
   "xrpl_flows_launch_impact",
+  // 2026-11-02: tools for paid routes that had none (Pulse 1.120.0,
+  // Telemetry 1.33.0, Flows 1.32.0).
+  "xrpl_pulse_whale_census",
+  "xrpl_pulse_whale_flow_history",
+  "xrpl_pulse_rwa_supply_history",
+  "xrpl_pulse_xls85_totals",
+  "xrpl_pulse_ripple_counterparty_graph",
+  "xrpl_pulse_recent_choreographies",
+  "xrpl_pulse_top_destinations",
+  "xrpl_pulse_moex_xrp_index",
+  "xrpl_telemetry_liquidity",
+  "xrpl_telemetry_exchange_flow_history",
+  "xrpl_flows_etf_candidates",
+  "xrpl_vault_daily_flow_history",
 ]);
 
 /**

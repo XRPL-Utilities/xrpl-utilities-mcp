@@ -16,7 +16,7 @@ export const pulse: ServiceDef = {
   label: "XR-Pulse",
   baseUrl: "https://pulse.xrpl-utilities.io",
   manifestUrl: "https://pulse.xrpl-utilities.io/agents.json",
-  knownSchemaVersions: ["1.13.0", "1.14.0", "1.15.0", "1.16.0", "1.16.1", "1.17.0", "1.18.0", "1.19.0", "1.20.0", "1.21.0", "1.21.1", "1.21.2", "1.21.3", "1.22.0", "1.22.1", "1.23.0", "1.24.0", "1.25.0", "1.25.1", "1.25.2", "1.26.0", "1.27.0", "1.28.0", "1.28.1", "1.29.0", "1.30.0", "1.31.0", "1.32.0", "1.32.1", "1.32.2", "1.32.3", "1.33.0", "1.34.0", "1.34.1", "1.34.2", "1.35.0", "1.36.0", "1.37.0", "1.38.0", "1.39.0", "1.39.1", "1.39.2", "1.39.3", "1.40.0", "1.40.1", "1.41.0", "1.41.1", "1.42.0", "1.43.0", "1.44.0", "1.45.0", "1.46.0", "1.46.1", "1.46.2", "1.47.0", "1.48.0", "1.49.0", "1.50.0", "1.51.0", "1.52.0", "1.53.0", "1.54.0", "1.55.0", "1.56.0", "1.57.0", "1.57.1", "1.58.0", "1.58.1", "1.59.0", "1.60.0", "1.61.0", "1.62.0", "1.63.0", "1.64.0", "1.64.1", "1.65.0", "1.66.0", "1.66.1", "1.67.0", "1.68.0", "1.69.0", "1.70.0", "1.70.1", "1.71.0", "1.72.0", "1.73.0", "1.74.0", "1.75.0", "1.76.0", "1.77.0", "1.78.0", "1.79.0", "1.80.0", "1.81.0", "1.82.0", "1.83.0", "1.84.0", "1.85.0", "1.86.0", "1.87.0", "1.88.0", "1.89.0", "1.90.0", "1.90.1", "1.90.2", "1.91.0", "1.92.0", "1.93.0", "1.94.0", "1.94.1", "1.95.0", "1.96.0", "1.96.1", "1.96.2", "1.97.0", "1.97.1", "1.98.0", "1.98.1", "1.98.2", "1.98.3", "1.98.4", "1.98.5", "1.98.6", "1.98.7", "1.98.8", "1.98.9", "1.98.10", "1.98.11", "1.98.12", "1.98.13", "1.98.14", "1.98.15", "1.98.16", "1.98.17", "1.98.18", "1.98.19", "1.98.20", "1.98.21", "1.98.22", "1.98.23", "1.98.24", "1.98.25", "1.98.26", "1.98.27", "1.98.28", "1.98.29", "1.99.0", "1.99.1", "1.100.0", "1.100.1", "1.100.2", "1.101.0", "1.102.0", "1.103.0", "1.104.0", "1.105.0", "1.106.0", "1.107.0", "1.108.0", "1.108.1", "1.108.2", "1.108.3", "1.109.0", "1.109.1", "1.110.0", "1.110.1", "1.111.0", "1.112.0", "1.113.0", "1.114.0", "1.115.0", "1.116.0", "1.117.0", "1.118.0", "1.119.0"],
+  knownSchemaVersions: ["1.13.0", "1.14.0", "1.15.0", "1.16.0", "1.16.1", "1.17.0", "1.18.0", "1.19.0", "1.20.0", "1.21.0", "1.21.1", "1.21.2", "1.21.3", "1.22.0", "1.22.1", "1.23.0", "1.24.0", "1.25.0", "1.25.1", "1.25.2", "1.26.0", "1.27.0", "1.28.0", "1.28.1", "1.29.0", "1.30.0", "1.31.0", "1.32.0", "1.32.1", "1.32.2", "1.32.3", "1.33.0", "1.34.0", "1.34.1", "1.34.2", "1.35.0", "1.36.0", "1.37.0", "1.38.0", "1.39.0", "1.39.1", "1.39.2", "1.39.3", "1.40.0", "1.40.1", "1.41.0", "1.41.1", "1.42.0", "1.43.0", "1.44.0", "1.45.0", "1.46.0", "1.46.1", "1.46.2", "1.47.0", "1.48.0", "1.49.0", "1.50.0", "1.51.0", "1.52.0", "1.53.0", "1.54.0", "1.55.0", "1.56.0", "1.57.0", "1.57.1", "1.58.0", "1.58.1", "1.59.0", "1.60.0", "1.61.0", "1.62.0", "1.63.0", "1.64.0", "1.64.1", "1.65.0", "1.66.0", "1.66.1", "1.67.0", "1.68.0", "1.69.0", "1.70.0", "1.70.1", "1.71.0", "1.72.0", "1.73.0", "1.74.0", "1.75.0", "1.76.0", "1.77.0", "1.78.0", "1.79.0", "1.80.0", "1.81.0", "1.82.0", "1.83.0", "1.84.0", "1.85.0", "1.86.0", "1.87.0", "1.88.0", "1.89.0", "1.90.0", "1.90.1", "1.90.2", "1.91.0", "1.92.0", "1.93.0", "1.94.0", "1.94.1", "1.95.0", "1.96.0", "1.96.1", "1.96.2", "1.97.0", "1.97.1", "1.98.0", "1.98.1", "1.98.2", "1.98.3", "1.98.4", "1.98.5", "1.98.6", "1.98.7", "1.98.8", "1.98.9", "1.98.10", "1.98.11", "1.98.12", "1.98.13", "1.98.14", "1.98.15", "1.98.16", "1.98.17", "1.98.18", "1.98.19", "1.98.20", "1.98.21", "1.98.22", "1.98.23", "1.98.24", "1.98.25", "1.98.26", "1.98.27", "1.98.28", "1.98.29", "1.99.0", "1.99.1", "1.100.0", "1.100.1", "1.100.2", "1.101.0", "1.102.0", "1.103.0", "1.104.0", "1.105.0", "1.106.0", "1.107.0", "1.108.0", "1.108.1", "1.108.2", "1.108.3", "1.109.0", "1.109.1", "1.110.0", "1.110.1", "1.111.0", "1.112.0", "1.113.0", "1.114.0", "1.115.0", "1.116.0", "1.117.0", "1.118.0", "1.119.0", "1.120.0"],
   tools: [
     {
       name: "xrpl_pulse_recent_events",
@@ -691,6 +691,223 @@ export const pulse: ServiceDef = {
       },
       method: "GET",
       path: "/stats/token-health",
+      authMode: "inline_x402",
+    },
+    {
+      name: "xrpl_pulse_whale_census",
+      description:
+        "Paid ($0.01 USD). " +
+        "XRP whale census: every account holding 1M+ XRP, size bands, holder categories, the top 100 by balance and one history point per day. Refreshed every 6 hours; stale=true when the latest count is over a day old.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          "history_days": {
+            "type": "integer",
+            "description": "Days of daily history (default 90, max 365).",
+            "minimum": 1,
+            "maximum": 365
+          },
+          "payment_signature": {
+            "type": "string",
+            "description": "x402 payment header."
+          }
+        },
+        additionalProperties: false,
+      },
+      method: "GET",
+      path: "/stats/whales",
+      authMode: "inline_x402",
+    },
+    {
+      name: "xrpl_pulse_whale_flow_history",
+      description:
+        "Paid ($0.01 USD). " +
+        "Daily whale and institutional USD flow history on XRPL, one row per UTC day.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          "days": {
+            "type": "integer",
+            "description": "Days of history (default 30, max 180).",
+            "minimum": 1,
+            "maximum": 180
+          },
+          "start_date": {
+            "type": "string",
+            "description": "Start date YYYY-MM-DD (optional)."
+          },
+          "end_date": {
+            "type": "string",
+            "description": "End date YYYY-MM-DD (optional)."
+          },
+          "payment_signature": {
+            "type": "string",
+            "description": "x402 payment header."
+          }
+        },
+        additionalProperties: false,
+      },
+      method: "GET",
+      path: "/stats/whale-flow-history",
+      authMode: "inline_x402",
+    },
+    {
+      name: "xrpl_pulse_rwa_supply_history",
+      description:
+        "Paid ($0.01 USD). " +
+        "Daily supply change per tracked real-world-asset issuer on XRPL, in each token's own units.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          "days": {
+            "type": "integer",
+            "description": "Days of history (default 30, max 90).",
+            "minimum": 1,
+            "maximum": 90
+          },
+          "payment_signature": {
+            "type": "string",
+            "description": "x402 payment header."
+          }
+        },
+        additionalProperties: false,
+      },
+      method: "GET",
+      path: "/stats/rwa-supply-history",
+      authMode: "inline_x402",
+    },
+    {
+      name: "xrpl_pulse_xls85_totals",
+      description:
+        "Paid ($0.01 USD). " +
+        "Token escrow (XLS-85) event counts: all time, last 7 days and last 24 hours, raw and with high-rate issuers removed, plus distinct issuers.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          "include_issuers": {
+            "type": "boolean",
+            "description": "Include the list of high-rate issuers left out of the organic count (default true)."
+          },
+          "payment_signature": {
+            "type": "string",
+            "description": "x402 payment header."
+          }
+        },
+        additionalProperties: false,
+      },
+      method: "GET",
+      path: "/stats/xls85-totals",
+      authMode: "inline_x402",
+    },
+    {
+      name: "xrpl_pulse_ripple_counterparty_graph",
+      description:
+        "Paid ($0.01 USD). " +
+        "Two-hop graph built from the Ripple counterparty queue: nodes and edges for wallets Ripple's operational wallets pay and where that XRP goes next.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          "limit": {
+            "type": "integer",
+            "description": "Most edges to return (default 200, max 2000).",
+            "minimum": 1,
+            "maximum": 2000
+          },
+          "payment_signature": {
+            "type": "string",
+            "description": "x402 payment header."
+          }
+        },
+        additionalProperties: false,
+      },
+      method: "GET",
+      path: "/stats/ripple-counterparty-graph",
+      authMode: "inline_x402",
+    },
+    {
+      name: "xrpl_pulse_recent_choreographies",
+      description:
+        "Paid ($0.01 USD). " +
+        "Recent coordinated institutional move patterns on XRPL: groups of linked payments that happen together.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          "window_hours": {
+            "type": "integer",
+            "description": "Look-back window in hours (default 24, max 168).",
+            "minimum": 1,
+            "maximum": 168
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Most patterns to return (default 10, max 50).",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "payment_signature": {
+            "type": "string",
+            "description": "x402 payment header."
+          }
+        },
+        additionalProperties: false,
+      },
+      method: "GET",
+      path: "/stats/recent-choreographies",
+      authMode: "inline_x402",
+    },
+    {
+      name: "xrpl_pulse_top_destinations",
+      description:
+        "Paid ($0.01 USD). " +
+        "Wallets receiving XRP from several watched source wallets, ranked by how many distinct sources pay them.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          "min_distinct_sources": {
+            "type": "integer",
+            "description": "Least number of distinct watched sources (default 2).",
+            "minimum": 1
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Most wallets to return (default 30, max 200).",
+            "minimum": 1,
+            "maximum": 200
+          },
+          "payment_signature": {
+            "type": "string",
+            "description": "x402 payment header."
+          }
+        },
+        additionalProperties: false,
+      },
+      method: "GET",
+      path: "/stats/top-destinations",
+      authMode: "inline_x402",
+    },
+    {
+      name: "xrpl_pulse_moex_xrp_index",
+      description:
+        "Paid ($0.01 USD). " +
+        "Moscow Exchange XRP index: latest value and daily history.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          "history_days": {
+            "type": "integer",
+            "description": "Days of daily history (default 30).",
+            "minimum": 1,
+            "maximum": 365
+          },
+          "payment_signature": {
+            "type": "string",
+            "description": "x402 payment header."
+          }
+        },
+        additionalProperties: false,
+      },
+      method: "GET",
+      path: "/stats/moex-xrp-index",
       authMode: "inline_x402",
     },
   ],
