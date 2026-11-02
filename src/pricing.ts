@@ -76,9 +76,20 @@ export const DATA_ROUTE_TOOLS: ReadonlySet<string> = new Set([
   "xrpl_flows_launch_impact",
 ]);
 
+/**
+ * Bundles: one call and one payment that combine several services
+ * (XR-Pulse schema 1.118.0, /bundles/*). Priced per bundle.
+ */
+export const BUNDLE_TOOLS: Readonly<Record<string, number>> = {
+  xrpl_wallet_check: 0.25,
+  xrpl_xrp_market_briefing: 0.05,
+};
+
 export function pricingFor(name: string, authMode: AuthMode): ToolPricing {
   if (authMode === "free") return { paid: false, priceUsd: 0 };
   if (DATA_ROUTE_TOOLS.has(name)) return { paid: true, priceUsd: 0.01, settlement: "x402_inline" };
+  const bundle = BUNDLE_TOOLS[name];
+  if (bundle !== undefined) return { paid: true, priceUsd: bundle, settlement: "x402_inline", note: "bundle" };
   if (NON_CHARGING_FLOW_STEPS.has(name)) {
     return { paid: false, priceUsd: 0, settlement: "xrpl_invoice", note: "covered_by_get_quote" };
   }
