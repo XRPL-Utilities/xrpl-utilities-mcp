@@ -180,11 +180,23 @@ jobs:
         # takes a while to serve it: 7 of 12 releases up to v0.2.203 failed
         # here with "version not found (404)" seconds after a good npm publish.
         # Retry with backoff (~5 min total) instead of failing on the race.
+        # First wait (up to ~10 min) until npm itself serves the version, and
+        # log in again before every attempt: the registry token is short lived,
+        # and v0.2.232's last attempt failed with "token is expired" after the
+        # earlier ones spent the wait on npm's 404.
         run: |
-          mcp-publisher login github-oidc
+          for i in $(seq 1 40); do
+            if [ "$(npm view "@xrpl-utilities/mcp@$VERSION" version 2>/dev/null)" = "$VERSION" ]; then
+              echo "npm serves $VERSION"; break
+            fi
+            echo "npm does not serve $VERSION yet ($i)"; sleep 15
+          done
           for i in 1 2 3 4 5 6; do
+            mcp-publisher login github-oidc
             if mcp-publisher publish; then exit 0; fi
-            echo "registry publish attempt $i failed; waiting for npm to serve the version"
+            echo "registry publish attempt $i failed; retrying"
             sleep $((i * 20))
           done
           exit 1
+        env:
+          VERSION: ${{ steps.v.outputs.version }}
