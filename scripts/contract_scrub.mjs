@@ -184,6 +184,7 @@ const ADDRESS_FIXTURE_TOOLS = [
   "xrpl_sentinel_scan_history",
   "xrpl_pulse_events_by_address",
   "xrpl_sentinel_verify_origin",
+  "xrpl_wallet_check",
 ];
 
 // Pulls live values off free endpoints so the scrubber can exercise tools
