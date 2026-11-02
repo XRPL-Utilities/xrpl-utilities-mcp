@@ -172,6 +172,9 @@ const TOOL_ARG_OVERRIDES = {
   // gate; with a real fixture the request reaches the gate and must 402.
   xrpl_vault_scan: { issuer: "RLUSD" },
   xrpl_flows_scan: { ticker: "XRP" },
+  // Bundles with a required input: a tracked RWA issuer (Ondo OUSG) and the
+  // venue operator comes from discovery below.
+  xrpl_rwa_token_report: { issuer: "rHuiXXjHLpMP8ZE9sSQU5aADQVWDwv6h5p" },
   // Trust path-param tools and the address-keyed paid tools are populated by
   // discoverFixtures() from the free index/event endpoints. If discovery
   // fails, the __skip is set there so the scrubber surfaces a clear reason
@@ -203,11 +206,13 @@ async function discoverFixtures() {
     if (status === 200 && op) {
       TOOL_ARG_OVERRIDES.xrpl_trust_operator_drilldown = { owner_address: op };
       TOOL_ARG_OVERRIDES.xrpl_trust_operator_attribution = { operator_address: op };
+      TOOL_ARG_OVERRIDES.xrpl_permissioned_venue_report = { operator: op };
       console.log(`  + operator_address = ${op}`);
     } else {
       const reason = `discovery failed (operators index status=${status})`;
       TOOL_ARG_OVERRIDES.xrpl_trust_operator_drilldown = { __skip: reason };
       TOOL_ARG_OVERRIDES.xrpl_trust_operator_attribution = { __skip: reason };
+      TOOL_ARG_OVERRIDES.xrpl_permissioned_venue_report = { __skip: reason };
       console.log(`  ! operator_address: ${reason}`);
     }
   } catch (e) {

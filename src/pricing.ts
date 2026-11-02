@@ -78,11 +78,15 @@ export const DATA_ROUTE_TOOLS: ReadonlySet<string> = new Set([
 
 /**
  * Bundles: one call and one payment that combine several services
- * (XR-Pulse schema 1.118.0, /bundles/*). Priced per bundle.
+ * (XR-Pulse schema 1.118.0 and 1.119.0, /bundles/*). Priced per bundle.
  */
 export const BUNDLE_TOOLS: Readonly<Record<string, number>> = {
   xrpl_wallet_check: 0.25,
   xrpl_xrp_market_briefing: 0.05,
+  xrpl_rwa_token_report: 0.15,
+  xrpl_fund_flow_report: 0.1,
+  xrpl_permissioned_venue_report: 0.1,
+  xrpl_network_snapshot: 0.1,
 };
 
 export function pricingFor(name: string, authMode: AuthMode): ToolPricing {
