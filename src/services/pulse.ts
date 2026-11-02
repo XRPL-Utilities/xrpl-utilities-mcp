@@ -16,7 +16,7 @@ export const pulse: ServiceDef = {
   label: "XR-Pulse",
   baseUrl: "https://pulse.xrpl-utilities.io",
   manifestUrl: "https://pulse.xrpl-utilities.io/agents.json",
-  knownSchemaVersions: ["1.13.0", "1.14.0", "1.15.0", "1.16.0", "1.16.1", "1.17.0", "1.18.0", "1.19.0", "1.20.0", "1.21.0", "1.21.1", "1.21.2", "1.21.3", "1.22.0", "1.22.1", "1.23.0", "1.24.0", "1.25.0", "1.25.1", "1.25.2", "1.26.0", "1.27.0", "1.28.0", "1.28.1", "1.29.0", "1.30.0", "1.31.0", "1.32.0", "1.32.1", "1.32.2", "1.32.3", "1.33.0", "1.34.0", "1.34.1", "1.34.2", "1.35.0", "1.36.0", "1.37.0", "1.38.0", "1.39.0", "1.39.1", "1.39.2", "1.39.3", "1.40.0", "1.40.1", "1.41.0", "1.41.1", "1.42.0", "1.43.0", "1.44.0", "1.45.0", "1.46.0", "1.46.1", "1.46.2", "1.47.0", "1.48.0", "1.49.0", "1.50.0", "1.51.0", "1.52.0", "1.53.0", "1.54.0", "1.55.0", "1.56.0", "1.57.0", "1.57.1", "1.58.0", "1.58.1", "1.59.0", "1.60.0", "1.61.0", "1.62.0", "1.63.0", "1.64.0", "1.64.1", "1.65.0", "1.66.0", "1.66.1", "1.67.0", "1.68.0", "1.69.0", "1.70.0", "1.70.1", "1.71.0", "1.72.0", "1.73.0", "1.74.0", "1.75.0", "1.76.0", "1.77.0", "1.78.0", "1.79.0", "1.80.0", "1.81.0", "1.82.0", "1.83.0", "1.84.0", "1.85.0", "1.86.0", "1.87.0", "1.88.0", "1.89.0", "1.90.0", "1.90.1", "1.90.2", "1.91.0", "1.92.0", "1.93.0", "1.94.0", "1.94.1", "1.95.0", "1.96.0", "1.96.1", "1.96.2", "1.97.0", "1.97.1", "1.98.0", "1.98.1", "1.98.2", "1.98.3", "1.98.4", "1.98.5", "1.98.6", "1.98.7", "1.98.8", "1.98.9", "1.98.10", "1.98.11", "1.98.12", "1.98.13", "1.98.14", "1.98.15", "1.98.16", "1.98.17", "1.98.18", "1.98.19", "1.98.20", "1.98.21", "1.98.22", "1.98.23", "1.98.24", "1.98.25", "1.98.26", "1.98.27", "1.98.28", "1.98.29", "1.99.0", "1.99.1", "1.100.0", "1.100.1", "1.100.2", "1.101.0", "1.102.0", "1.103.0", "1.104.0", "1.105.0", "1.106.0", "1.107.0", "1.108.0", "1.108.1", "1.108.2", "1.108.3", "1.109.0", "1.109.1", "1.110.0", "1.110.1", "1.111.0", "1.112.0", "1.113.0", "1.114.0", "1.115.0", "1.116.0", "1.117.0", "1.118.0"],
+  knownSchemaVersions: ["1.13.0", "1.14.0", "1.15.0", "1.16.0", "1.16.1", "1.17.0", "1.18.0", "1.19.0", "1.20.0", "1.21.0", "1.21.1", "1.21.2", "1.21.3", "1.22.0", "1.22.1", "1.23.0", "1.24.0", "1.25.0", "1.25.1", "1.25.2", "1.26.0", "1.27.0", "1.28.0", "1.28.1", "1.29.0", "1.30.0", "1.31.0", "1.32.0", "1.32.1", "1.32.2", "1.32.3", "1.33.0", "1.34.0", "1.34.1", "1.34.2", "1.35.0", "1.36.0", "1.37.0", "1.38.0", "1.39.0", "1.39.1", "1.39.2", "1.39.3", "1.40.0", "1.40.1", "1.41.0", "1.41.1", "1.42.0", "1.43.0", "1.44.0", "1.45.0", "1.46.0", "1.46.1", "1.46.2", "1.47.0", "1.48.0", "1.49.0", "1.50.0", "1.51.0", "1.52.0", "1.53.0", "1.54.0", "1.55.0", "1.56.0", "1.57.0", "1.57.1", "1.58.0", "1.58.1", "1.59.0", "1.60.0", "1.61.0", "1.62.0", "1.63.0", "1.64.0", "1.64.1", "1.65.0", "1.66.0", "1.66.1", "1.67.0", "1.68.0", "1.69.0", "1.70.0", "1.70.1", "1.71.0", "1.72.0", "1.73.0", "1.74.0", "1.75.0", "1.76.0", "1.77.0", "1.78.0", "1.79.0", "1.80.0", "1.81.0", "1.82.0", "1.83.0", "1.84.0", "1.85.0", "1.86.0", "1.87.0", "1.88.0", "1.89.0", "1.90.0", "1.90.1", "1.90.2", "1.91.0", "1.92.0", "1.93.0", "1.94.0", "1.94.1", "1.95.0", "1.96.0", "1.96.1", "1.96.2", "1.97.0", "1.97.1", "1.98.0", "1.98.1", "1.98.2", "1.98.3", "1.98.4", "1.98.5", "1.98.6", "1.98.7", "1.98.8", "1.98.9", "1.98.10", "1.98.11", "1.98.12", "1.98.13", "1.98.14", "1.98.15", "1.98.16", "1.98.17", "1.98.18", "1.98.19", "1.98.20", "1.98.21", "1.98.22", "1.98.23", "1.98.24", "1.98.25", "1.98.26", "1.98.27", "1.98.28", "1.98.29", "1.99.0", "1.99.1", "1.100.0", "1.100.1", "1.100.2", "1.101.0", "1.102.0", "1.103.0", "1.104.0", "1.105.0", "1.106.0", "1.107.0", "1.108.0", "1.108.1", "1.108.2", "1.108.3", "1.109.0", "1.109.1", "1.110.0", "1.110.1", "1.111.0", "1.112.0", "1.113.0", "1.114.0", "1.115.0", "1.116.0", "1.117.0", "1.118.0", "1.119.0"],
   tools: [
     {
       name: "xrpl_pulse_recent_events",
@@ -533,6 +533,124 @@ export const pulse: ServiceDef = {
       },
       method: "GET",
       path: "/bundles/xrp-market-briefing",
+      authMode: "inline_x402",
+    },
+    {
+      name: "xrpl_rwa_token_report",
+      description:
+        "Paid ($0.15 USD). Bundle: is a tokenized real-world asset on the XRP Ledger growing, and " +
+        "who holds it, in one call and one payment. Supply, holders (trustlines), 7 and 30-day " +
+        "growth and top-holder share from the XR-Pulse RWA tracker, 30 days of daily supply " +
+        "changes, tracked AMM pools, the issuer's XR-Trust permissioned-domain role and a 90-day " +
+        "XR-Ledger statement of the issuer wallet. Amounts are in the token's own unit. Returns " +
+        "summary, key_numbers and sections. An issuer that is not tracked returns 404 and is not charged.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          issuer: {
+            type: "string",
+            description: "Issuer wallet (r...) of a tracked RWA token.",
+            pattern: "^r[1-9A-HJ-NP-Za-km-z]{24,34}$",
+          },
+          currency: {
+            type: "string",
+            description: "Currency code. Needed only when the issuer has more than one tracked token.",
+          },
+          payment_signature: {
+            type: "string",
+            description: "x402 payment header.",
+          },
+        },
+        required: ["issuer"],
+        additionalProperties: false,
+      },
+      method: "GET",
+      path: "/bundles/rwa-token-report",
+      authMode: "inline_x402",
+    },
+    {
+      name: "xrpl_fund_flow_report",
+      description:
+        "Paid ($0.10 USD). Bundle: are XRP funds buying, and does the ledger agree, in one call " +
+        "and one payment. Fund AUM and net flows per fund (XR-Flows), XRP held by funds, net XRP " +
+        "flow on and off exchanges over the same days, whether the two point the same way, and " +
+        "the rolling correlation (a measurement, not a causal claim). Returns summary, key_numbers " +
+        "and sections; each section says ok, stale or unreadable.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          days: {
+            type: "integer",
+            description: "Window in days: 7 or 30. Default 7.",
+            enum: [7, 30],
+          },
+          payment_signature: {
+            type: "string",
+            description: "x402 payment header.",
+          },
+        },
+        additionalProperties: false,
+      },
+      method: "GET",
+      path: "/bundles/fund-flow-report",
+      authMode: "inline_x402",
+    },
+    {
+      name: "xrpl_permissioned_venue_report",
+      description:
+        "Paid ($0.10 USD). Bundle: who runs an XRPL permissioned domain (XLS-80) and is it active, " +
+        "in one call and one payment. XR-Trust operator profile (name, jurisdiction, domains, " +
+        "credentials outstanding, 24h permissioned offers, AMM events and traders), attribution and " +
+        "the latest domain activity. Give operator or domain_id. Unknown operator or domain returns " +
+        "404 and is not charged. Running a domain is not a compliance certification.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          operator: {
+            type: "string",
+            description: "Operator wallet (r...) that owns the permissioned domain. Give this or domain_id.",
+            pattern: "^r[1-9A-HJ-NP-Za-km-z]{24,34}$",
+          },
+          domain_id: {
+            type: "string",
+            description: "PermissionedDomain ledger object ID (64 hex). Give this or operator.",
+            pattern: "^[0-9A-Fa-f]{64}$",
+          },
+          payment_signature: {
+            type: "string",
+            description: "x402 payment header.",
+          },
+        },
+        additionalProperties: false,
+      },
+      method: "GET",
+      path: "/bundles/permissioned-venue-report",
+      authMode: "inline_x402",
+    },
+    {
+      name: "xrpl_network_snapshot",
+      description:
+        "Paid ($0.10 USD). Bundle: how big and how busy the XRP Ledger is, in one call and one " +
+        "payment. Funded accounts and daily active accounts and transactions with 7 and 30-day " +
+        "changes, ledger object counts, XRP supply (circulating, escrowed, burned), XRP and RLUSD " +
+        "payment volume (XR-Telemetry) and on-ledger sell impact. Returns summary, key_numbers and " +
+        "sections; each section says ok, stale or unreadable.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          sections: {
+            type: "string",
+            description: "Comma-separated sections to return: network, ledger_objects, settlement, liquidity. Omit for all. summary and key_numbers always come back.",
+          },
+          payment_signature: {
+            type: "string",
+            description: "x402 payment header.",
+          },
+        },
+        additionalProperties: false,
+      },
+      method: "GET",
+      path: "/bundles/xrpl-network-snapshot",
       authMode: "inline_x402",
     },
     {

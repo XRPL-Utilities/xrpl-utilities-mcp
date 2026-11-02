@@ -18,9 +18,9 @@ via the hosted endpoint at `mcp.xrpl-utilities.io`.
 | **XR-Flows** | XRP ETF AUM against XRPL exchange flow, launch impact and cross-border flow | `xrpl_flows_scan` (paid), `xrpl_flows_correlation` (paid, $0.01), `xrpl_flows_cross_border_flow` (paid, $0.01), `xrpl_flows_launch_impact` (paid, $0.01), `xrpl_flows_etf_flow_summary` (paid, $0.01) |
 | **XR-Ledger** | Account statements for one XRPL address or a watchlist of up to 10: monthly XRP in/out, fees, activity categories, token net change, counterparties | `xrpl_ledger_statement` (paid), `xrpl_ledger_schema` (free) |
 | **XR-Desk** | Composite desk briefing: market posture, positioning, RLUSD health, supply pressure, RWA market | `xrpl_desk_briefing` (paid, $0.01) |
-| **Bundles** | One call and one payment that answer a whole question from several services. Wallet check: who an XRPL wallet is and what it has been doing (Sentinel scan, domain check, Pulse events, 90-day XR-Ledger statement, XR-Trust role). XRP market briefing: posture, whale count, exchange net flow, positioning, escrow calendar, fund holdings, on-ledger sell impact | `xrpl_wallet_check` (paid, $0.25), `xrpl_xrp_market_briefing` (paid, $0.05) |
+| **Bundles** | One call and one payment that answer a whole question from several services. Wallet check: who an XRPL wallet is and what it has been doing (Sentinel scan, domain check, Pulse events, 90-day XR-Ledger statement, XR-Trust role). XRP market briefing: posture, whale count, exchange net flow, positioning, escrow calendar, fund holdings, on-ledger sell impact. RWA token report: supply, holders, growth, AMM pools and the issuer wallet. Fund flow report: fund flows against net exchange flow on the ledger. Permissioned venue report: who runs a permissioned domain and how active it is. Network snapshot: accounts, activity, ledger objects, supply and payment volume | `xrpl_wallet_check` (paid, $0.25), `xrpl_xrp_market_briefing` (paid, $0.05), `xrpl_rwa_token_report` (paid, $0.15), `xrpl_fund_flow_report` (paid, $0.10), `xrpl_permissioned_venue_report` (paid, $0.10), `xrpl_network_snapshot` (paid, $0.10) |
 
-48 tools total: 40 paid, 8 free, all read-only.
+52 tools total: 44 paid, 8 free, all read-only.
 Paid calls settle over x402 v2 in XRP or RLUSD on XRPL, or USDC on Base.
 
 ## Auth model
@@ -79,7 +79,7 @@ Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_
 }
 ```
 
-Restart Claude Desktop. The 48 tools should appear with the prefix
+Restart Claude Desktop. The 52 tools should appear with the prefix
 `xrpl_`. Ask Claude to "scan the wallet rXXX with XR-Sentinel" or
 "list permissioned domains on XRPL" and the tool calls flow through.
 
