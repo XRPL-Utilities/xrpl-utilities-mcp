@@ -18,8 +18,9 @@ via the hosted endpoint at `mcp.xrpl-utilities.io`.
 | **XR-Flows** | XRP ETF AUM against XRPL exchange flow, launch impact and cross-border flow | `xrpl_flows_scan` (paid), `xrpl_flows_correlation` (paid, $0.01), `xrpl_flows_cross_border_flow` (paid, $0.01), `xrpl_flows_launch_impact` (paid, $0.01), `xrpl_flows_etf_flow_summary` (paid, $0.01) |
 | **XR-Ledger** | Account statements for one XRPL address or a watchlist of up to 10: monthly XRP in/out, fees, activity categories, token net change, counterparties | `xrpl_ledger_statement` (paid), `xrpl_ledger_schema` (free) |
 | **XR-Desk** | Composite desk briefing: market posture, positioning, RLUSD health, supply pressure, RWA market | `xrpl_desk_briefing` (paid, $0.01) |
+| **Bundles** | One call and one payment that answer a whole question from several services. Wallet check: who an XRPL wallet is and what it has been doing (Sentinel scan, domain check, Pulse events, 90-day XR-Ledger statement, XR-Trust role). XRP market briefing: posture, whale count, exchange net flow, positioning, escrow calendar, fund holdings, on-ledger sell impact | `xrpl_wallet_check` (paid, $0.25), `xrpl_xrp_market_briefing` (paid, $0.05) |
 
-46 tools total: 38 paid, 8 free, all read-only.
+48 tools total: 40 paid, 8 free, all read-only.
 Paid calls settle over x402 v2 in XRP or RLUSD on XRPL, or USDC on Base.
 
 ## Auth model
@@ -28,7 +29,8 @@ The MCP server is a **stateless passthrough proxy**. It does not hold
 wallets, manage user accounts, or subsidize calls.
 
 Paid tools speak standard x402 over MCP. Deep dives and feeds cost $0.10 USD per call;
-XR-Pulse data tools cost $0.01 USD per call.
+XR-Pulse data tools cost $0.01 USD per call. Bundles cost $0.25 (wallet check) and $0.05
+(XRP market briefing).
 Call a paid tool without payment and you get a tool result with
 `isError: true` and the x402 `PaymentRequired` object in
 `structuredContent`. It lists three payment options: XRP and RLUSD on
@@ -77,7 +79,7 @@ Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_
 }
 ```
 
-Restart Claude Desktop. The 46 tools should appear with the prefix
+Restart Claude Desktop. The 48 tools should appear with the prefix
 `xrpl_`. Ask Claude to "scan the wallet rXXX with XR-Sentinel" or
 "list permissioned domains on XRPL" and the tool calls flow through.
 

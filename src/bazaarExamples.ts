@@ -43,6 +43,8 @@ export const BAZAAR_EXAMPLES: Readonly<Record<string, Readonly<Record<string, un
   xrpl_pulse_rwa_summary: { asset_class: "treasuries" },
   xrpl_pulse_escrow_calendar: { months: 6 },
   xrpl_desk_briefing: { sections: "positioning,rwa_market" },
+  xrpl_wallet_check: { address: "rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De" },
+  xrpl_xrp_market_briefing: { sections: "briefing,whales,liquidity" },
   xrpl_telemetry_settlement_series: { bucket: "daily", count: 30 },
   xrpl_telemetry_dex_pair_volume: { pair: "XRP/RLUSD" },
   xrpl_trust_operator_attribution: { operator_address: "rHgk8sXaXEG4kFDXJgCoKk2WaWPBYXvhWr" },
