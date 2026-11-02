@@ -44,8 +44,29 @@ export const NON_CHARGING_FLOW_STEPS: ReadonlySet<string> = new Set([
   "xrpl_telemetry_get_results",
 ]);
 
+/**
+ * Pulse data routes: $0.01 per call for agents (XR-Pulse schema 1.116.0,
+ * PULSE_DATA_GATE). Free on xrpl-utilities.com, which this server never sees.
+ */
+export const DATA_ROUTE_TOOLS: ReadonlySet<string> = new Set([
+  "xrpl_pulse_ripple_counterparties",
+  "xrpl_pulse_ripple_topology",
+  "xrpl_pulse_cex_attribution",
+  "xrpl_pulse_xrpl_primitives",
+  "xrpl_pulse_whale_flow_24h",
+  "xrpl_pulse_exchange_flow_delta",
+  "xrpl_pulse_rwa_summary",
+  "xrpl_pulse_exchange_net_flow",
+  "xrpl_pulse_escrow_calendar",
+  "xrpl_pulse_entity_positioning",
+  "xrpl_pulse_rlusd_distribution",
+  "xrpl_desk_briefing",
+  "xrpl_pulse_token_health",
+]);
+
 export function pricingFor(name: string, authMode: AuthMode): ToolPricing {
   if (authMode === "free") return { paid: false, priceUsd: 0 };
+  if (DATA_ROUTE_TOOLS.has(name)) return { paid: true, priceUsd: 0.01, settlement: "x402_inline" };
   if (NON_CHARGING_FLOW_STEPS.has(name)) {
     return { paid: false, priceUsd: 0, settlement: "xrpl_invoice", note: "covered_by_get_quote" };
   }

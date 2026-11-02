@@ -8,10 +8,24 @@ import assert from "node:assert/strict";
 import Ajv from "ajv";
 import Ajv2020 from "ajv/dist/2020.js";
 import { ALL_TOOLS } from "../dist/services/index.js";
-import { BAZAAR_EXAMPLES } from "../dist/bazaarExamples.js";
+import { BAZAAR_EXAMPLES, NO_ARGUMENT_PAID_TOOLS } from "../dist/bazaarExamples.js";
 import { MCP_ICON_URL, MCP_SERVICE_NAME, mcpBazaarExtension, mcpServiceTags, paymentRequiredFor } from "../dist/x402mcp.js";
 
-const paid = ALL_TOOLS.filter((t) => t.authMode === "inline_x402");
+const allPaid = ALL_TOOLS.filter((t) => t.authMode === "inline_x402");
+// Tools whose route takes no arguments have no honest example; they must
+// really have nothing to send (only transport args), and must be few.
+const paid = allPaid.filter((t) => !NO_ARGUMENT_PAID_TOOLS.has(t.name));
+
+test("no-argument paid tools really take no arguments and have no example", () => {
+  assert.ok(NO_ARGUMENT_PAID_TOOLS.size <= 5);
+  for (const name of NO_ARGUMENT_PAID_TOOLS) {
+    const t = allPaid.find((x) => x.name === name);
+    assert.ok(t, `${name} is not a paid tool`);
+    const props = Object.keys(t.inputSchema.properties ?? {}).filter((k) => k !== "payment_signature");
+    assert.deepEqual(props, [], `${name} takes arguments, so it needs a real example`);
+    assert.equal(BAZAAR_EXAMPLES[name], undefined);
+  }
+});
 
 test("every paid tool has a Bazaar example, and no example is orphaned", () => {
   assert.ok(paid.length > 0);
