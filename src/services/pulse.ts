@@ -571,9 +571,9 @@ export const pulse: ServiceDef = {
     {
       name: "xrpl_fund_flow_report",
       description:
-        "Paid ($0.10 USD). Bundle: are XRP funds buying, and does the ledger agree, in one call " +
-        "and one payment. Fund AUM and net flows per fund (XR-Flows), XRP held by funds, net XRP " +
-        "flow on and off exchanges over the same days, whether the two point the same way, and " +
+        "Paid ($0.10 USD). Bundle: are XRP funds growing, and does the ledger agree, in one call " +
+        "and one payment. Fund assets and their change per fund, price moves included (XR-Flows), " +
+        "XRP held by funds, net XRP flow on and off exchanges over the same days, whether the two point the same way, and " +
         "the rolling correlation (a measurement, not a causal claim). Returns summary, key_numbers " +
         "and sections; each section says ok, stale or unreadable.",
       inputSchema: {
