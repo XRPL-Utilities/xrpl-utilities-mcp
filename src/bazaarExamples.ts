@@ -38,6 +38,17 @@ export const BAZAAR_EXAMPLES: Readonly<Record<string, Readonly<Record<string, un
   xrpl_pulse_entity_positioning: { days: 7 },
   xrpl_pulse_rlusd_distribution: { days: 7 },
   xrpl_pulse_token_health: { code: "RLUSD", limit: 10 },
+  xrpl_telemetry_settlement_series: { bucket: "daily", count: 30 },
+  xrpl_telemetry_dex_pair_volume: { pair: "XRP/RLUSD" },
+  xrpl_trust_operator_attribution: { operator_address: "rHgk8sXaXEG4kFDXJgCoKk2WaWPBYXvhWr" },
+  xrpl_trust_usage_summary: { window_days: 30 },
+  xrpl_trust_permissioned_activity: { limit: 50 },
+  xrpl_trust_recent_events: { limit: 100 },
+  xrpl_trust_jurisdictions: { addresses_limit: 50 },
+  xrpl_flows_correlation: { days: 30 },
+  xrpl_flows_etf_flow_summary: { days: 7 },
+  xrpl_flows_cross_border_flow: { window_days: 30, top_corridors: 20 },
+  xrpl_flows_launch_impact: { window_days: 7 },
 };
 
 /**
