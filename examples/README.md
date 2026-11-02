@@ -24,9 +24,9 @@ python3 agent_pays_for_scan.py            # pays ~$0.10 in XRP, returns the scan
 HTTP 402 from https://sentinel.xrpl-utilities.io/scan
   x402Version: 2
   the agent may pay any one of:
-    - 0.087241 XRP   on xrpl:0       ->  rKxTzCKYKPPdXEzuioEQ6KekQK26w2DBd5
-    - 0.10 RLUSD     on xrpl:0       ->  rKxTzCKYKPPdXEzuioEQ6KekQK26w2DBd5
-    - 0.10 USDC      on eip155:8453  ->  0xADB77e932516298660C47e390676c2F053D7f3c8
+    - 0.087241 XRP   on xrpl:0       ->  r9sr13PJ4u6ZvmkCWEQCs5AEenBo4zU3xF
+    - 0.10 RLUSD     on xrpl:0       ->  r9sr13PJ4u6ZvmkCWEQCs5AEenBo4zU3xF
+    - 0.10 USDC      on eip155:8453  ->  0xa9c371e166229AAaA4C3999FB8a203e43c7329F8
 ```
 
 **Paid mode** (funded wallet) lets the `x402_requests` session auto-sign the
