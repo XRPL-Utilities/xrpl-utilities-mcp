@@ -64,6 +64,22 @@ export function spliceSchemaVersion(before, addVersion) {
   return { ok: true, source: before.replace(KNOWN_SCHEMA_RE, (_m, a, b, c) => `${a}${b}, "${addVersion}"${c}`) };
 }
 
+// 2026-11-01/02: the /stats data routes on Pulse, Telemetry, Trust and Flows
+// cost agents $0.01 and the site reads them on a visitor pass. This public CI
+// has neither, so a content check on one of them sees a 402. A well-formed
+// x402 offer there means the route is up and priced, which is all this job can
+// prove; data content on those routes is watched by the private health
+// monitor in XR-Sentinel, which reads them through each service's operator
+// mirror. A route the site alone may read (site_only) answers 403.
+export function gatedOutcome(status, body, edge = {}) {
+  if (status === 402 && Array.isArray(body?.accepts) && body.accepts.length > 0
+      && body.accepts.every((a) => a && a.payTo && (a.amount || a.maxAmountRequired))) {
+    return "agent_paid";
+  }
+  if (status === 403 && edge.siteOnly) return "site_only";
+  return null;
+}
+
 let pass = 0;
 let fail = 0;
 const failures = [];
@@ -221,15 +237,16 @@ async function discoverFixtures() {
     console.log(`  ! domain_id: ${reason}`);
   }
   // A live XRPL address for the address-keyed paid tools. Sourced from the
-  // Pulse RWA issuer map so there is no hardcoded address to rot.
+  // RWA issuer registry so there is no hardcoded address to rot.
   try {
-    const { status, body } = await fetchJson("https://pulse.xrpl-utilities.io/stats/rwa-summary");
-    const addr = body?.issuers?.find((i) => i?.wallet)?.wallet;
+    // Sentinel's RWA registry is free; Pulse rwa-summary is agent-paid.
+    const { status, body } = await fetchJson("https://sentinel.xrpl-utilities.io/registry/rwa-issuers");
+    const addr = body?.wallets?.find((w) => /^r[1-9A-HJ-NP-Za-km-z]{24,34}$/.test(w?.address || ""))?.address;
     if (status === 200 && addr) {
       for (const t of ADDRESS_FIXTURE_TOOLS) TOOL_ARG_OVERRIDES[t] = { address: addr };
       console.log(`  + address        = ${addr}`);
     } else {
-      const reason = `discovery found no issuer wallet in rwa-summary (status=${status})`;
+      const reason = `discovery found no wallet in the Sentinel RWA registry (status=${status})`;
       for (const t of ADDRESS_FIXTURE_TOOLS) TOOL_ARG_OVERRIDES[t] = { __skip: reason };
       console.log(`  ! address: ${reason}`);
     }
@@ -380,6 +397,7 @@ const CROSS_SERVICE_EDGES = [
   },
   {
     label: "XR-Desk index.html -> Pulse /stats/desk-trends",
+    siteOnly: true,
     url: "https://pulse.xrpl-utilities.io/stats/desk-trends?days=7",
     requiredFields: ["series"],
     requiredNested: {
@@ -435,6 +453,9 @@ function deepFieldCheck(label, body, fields, nested = {}) {
 async function checkEdge(edge) {
   try {
     const { status, body } = await fetchJson(edge.url);
+    const gated = gatedOutcome(status, body, edge);
+    if (gated === "agent_paid") return ok(`${edge.label} (agent-paid data route, got a valid 402)`);
+    if (gated === "site_only") return ok(`${edge.label} (site-only route, got 403)`);
     if (status !== 200) return bad(edge.label, `HTTP ${status}`);
     if (!body || typeof body !== "object") return bad(edge.label, "no JSON body");
     // Detect the silent-fallback shape before per-field checks
@@ -460,6 +481,10 @@ async function checkRwaRegistryDrift() {
     const sentinel = await fetchJson("https://sentinel.xrpl-utilities.io/registry/rwa-issuers");
     const pulse = await fetchJson("https://pulse.xrpl-utilities.io/stats/rwa-summary");
     if (sentinel.status !== 200) return bad(label, `Sentinel registry HTTP ${sentinel.status}`);
+    if (gatedOutcome(pulse.status, pulse.body) === "agent_paid") {
+      console.log(`SKIP  ${label} — Pulse rwa-summary is agent-paid and this job has no operator key, so the drift is not checked here`);
+      return;
+    }
     if (pulse.status !== 200) return bad(label, `Pulse rwa-summary HTTP ${pulse.status}`);
     const registry = new Set(
       (sentinel.body?.wallets || []).map((w) => w.address).filter(Boolean)
