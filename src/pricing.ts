@@ -87,6 +87,7 @@ export const DATA_ROUTE_TOOLS: ReadonlySet<string> = new Set([
   "xrpl_telemetry_liquidity",
   "xrpl_telemetry_exchange_flow_history",
   "xrpl_flows_etf_candidates",
+  "xrpl_vault_daily_flow_history",
 ]);
 
 /**

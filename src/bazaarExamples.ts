@@ -60,6 +60,7 @@ export const BAZAAR_EXAMPLES: Readonly<Record<string, Readonly<Record<string, un
   xrpl_telemetry_liquidity: { include_slippage: true },
   xrpl_telemetry_exchange_flow_history: { days: 14 },
   xrpl_flows_etf_candidates: { status: "unverified" },
+  xrpl_vault_daily_flow_history: { days: 30 },
   xrpl_telemetry_settlement_series: { bucket: "daily", count: 30 },
   xrpl_telemetry_dex_pair_volume: { pair: "XRP/RLUSD" },
   xrpl_trust_operator_attribution: { operator_address: "rHgk8sXaXEG4kFDXJgCoKk2WaWPBYXvhWr" },
