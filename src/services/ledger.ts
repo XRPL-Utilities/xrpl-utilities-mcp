@@ -19,7 +19,7 @@ export const ledger: ServiceDef = {
   label: "XR-Ledger",
   baseUrl: "https://ledger.xrpl-utilities.io",
   manifestUrl: "https://ledger.xrpl-utilities.io/agents.json",
-  knownSchemaVersions: ["1.5.0", "1.6.0"],
+  knownSchemaVersions: ["1.5.0", "1.6.0", "1.7.0"],
   tools: [
     {
       name: "xrpl_ledger_statement",
