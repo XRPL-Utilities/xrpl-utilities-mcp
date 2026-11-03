@@ -19,7 +19,7 @@ export const ledger: ServiceDef = {
   label: "XR-Ledger",
   baseUrl: "https://ledger.xrpl-utilities.io",
   manifestUrl: "https://ledger.xrpl-utilities.io/agents.json",
-  knownSchemaVersions: ["1.5.0", "1.6.0", "1.7.0"],
+  knownSchemaVersions: ["1.5.0", "1.6.0", "1.7.0", "1.8.0"],
   tools: [
     {
       name: "xrpl_ledger_statement",
@@ -27,7 +27,9 @@ export const ledger: ServiceDef = {
         "Paid ($0.10 USD, RLUSD or XRP on XRPL, or USDC on Base). " +
         "Account statement for 1-10 XRPL addresses rolled into one: monthly periods with " +
         "XRP in/out/net, fees, activity categories, per-token net change (exact decimal " +
-        "strings), top counterparties and plain-English statement lines.",
+        "strings), top counterparties and plain-English statement lines. Each line carries its " +
+        "ledger index, transaction hash, destination and source tags and the delivered amount, " +
+        "and include_csv returns the lines as CSV.",
       inputSchema: {
         type: "object",
         properties: {
@@ -51,6 +53,11 @@ export const ledger: ServiceDef = {
           include_lines: {
             type: "boolean",
             description: "Keep every statement line; by default periods above 60 transactions are collapsed.",
+            default: false,
+          },
+          include_csv: {
+            type: "boolean",
+            description: "Also return every statement line as CSV (csv.content), at most 2000 rows.",
             default: false,
           },
           payment_signature: {
