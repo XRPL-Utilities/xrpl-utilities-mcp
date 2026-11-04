@@ -156,6 +156,10 @@ page as a green check. The MCP Registry entry lives at
 [registry.modelcontextprotocol.io](https://registry.modelcontextprotocol.io/v0/servers?search=io.github.XRPL-Utilities/mcp)
 under the reverse-DNS name `io.github.XRPL-Utilities/mcp`.
 
+## Terms and data use
+
+The data these tools return is on-chain data and heuristic analysis for information and research. It is not investment, legal, tax or compliance advice, and it comes with no accuracy guarantee. You are responsible for anything your agent does with it. Paid calls are covered by the [Terms of Service](https://xrpl-utilities.com/terms/).
+
 ## License
 
-MIT. Full portfolio at [xrpl-utilities.com](https://xrpl-utilities.com).
+The code in this repository is MIT licensed; see [LICENSE](LICENSE). The XR-* names are trademarks of XRPL-Utilities LLC. Full portfolio at [xrpl-utilities.com](https://xrpl-utilities.com).
