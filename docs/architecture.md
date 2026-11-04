@@ -1,171 +1,127 @@
 # XRPL-Utilities portfolio architecture
 
-Five live services on the `xrpl-utilities.io` domain plus a marketing
-site on `xrpl-utilities.com`. Every paid call is settled on XRPL
-mainnet via x402 v2 through the [t54](https://t54.ai) facilitator;
-all revenue lands on a single treasury wallet (`rKxTz...DBd5`).
+Seven live services on the `xrpl-utilities.io` domain, this MCP server, and a
+marketing and data site on `xrpl-utilities.com`. Every paid call is settled
+over x402: XRP or RLUSD on XRPL mainnet through the [t54](https://t54.ai)
+facilitator, or USDC on Base mainnet through the Coinbase facilitator. All
+revenue lands on one XRPL treasury (`r9sr13PJ4u6ZvmkCWEQCs5AEenBo4zU3xF`) and
+one Base address (`0xa9c371e166229AAaA4C3999FB8a203e43c7329F8`).
 
 ## High-level flow
 
 ```mermaid
 flowchart TB
-    %% ──────────── CONSUMERS ─────────────
     subgraph CONSUMERS["Consumers"]
         AGENT["AI agents<br/>(Claude Desktop, SDKs, custom)"]
-        HUMAN["Humans<br/>(browser, Xaman wallet)"]
+        HUMAN["People<br/>(browser)"]
     end
 
-    %% ──────────── ENTRY SURFACES ─────────────
     subgraph ENTRY["Entry surfaces"]
-        DOTCOM["xrpl-utilities.com<br/>marketing site<br/>(Cloudflare Pages)"]
+        DOTCOM["xrpl-utilities.com<br/>site + Worker proxy<br/>(Cloudflare)"]
         MCP["mcp.xrpl-utilities.io<br/>MCP server (Railway)<br/>+ npm @xrpl-utilities/mcp"]
-        DIRECT["Direct API<br/>(curl, x402-xrpl SDK,<br/>any HTTP client)"]
+        DIRECT["Direct API<br/>(curl, x402 SDKs,<br/>any HTTP client)"]
     end
 
-    %% ──────────── BACKEND SERVICES ─────────────
-    subgraph BACKEND["XR-* backend services (Railway, FastAPI)"]
-        SENTINEL["sentinel.xrpl-utilities.io<br/><b>XR-Sentinel</b><br/>wallet activity classifier<br/>POST /scan, /scan/history"]
-        PULSE["pulse.xrpl-utilities.io<br/><b>XR-Pulse</b><br/>normalized signal feed<br/>POST /events/recent"]
-        TELEMETRY["telemetry.xrpl-utilities.io<br/><b>XR-Telemetry</b><br/>macro snapshot<br/>POST /scan, /quote -> /status -> /results"]
-        TRUST["trust.xrpl-utilities.io<br/><b>XR-Trust</b><br/>XLS-70/80/81 + DID directory<br/>GET /domains, /domain/{id}, /events"]
+    subgraph BACKEND["XR-* services (Railway, FastAPI)"]
+        SENTINEL["XR-Sentinel<br/>wallet classifier, /proof"]
+        PULSE["XR-Pulse<br/>event feed, data routes, bundles"]
+        TELEMETRY["XR-Telemetry<br/>network telemetry"]
+        TRUST["XR-Trust<br/>permissioned domains"]
+        VAULT["XR-Vault<br/>RWA tracker"]
+        FLOWS["XR-Flows<br/>ETF flows"]
+        LEDGER["XR-Ledger<br/>account statements"]
     end
 
-    %% ──────────── PAYMENT + LEDGER ─────────────
-    subgraph LEDGER["Payment + ledger"]
-        T54["t54 facilitator<br/>x402 v2 verify + settle"]
-        XRPL["XRPL mainnet<br/>QuickNode Clio<br/>+ xrplcluster fallback"]
+    subgraph SETTLE["Settlement"]
+        T54["t54 facilitator<br/>XRP / RLUSD"]
+        CDP["Coinbase facilitator<br/>USDC on Base"]
+        TREASURY["Treasury<br/>XRPL r9sr13... / Base 0xa9c3..."]
     end
 
-    TREASURY["💰 Treasury wallet<br/>rKxTz...DBd5<br/>(all x402 settlements)"]
+    XRPL["XRP Ledger mainnet"]
 
-    %% ──────────── EXTERNAL DATA ─────────────
-    subgraph EXTERNAL["External data (read-only, free)"]
-        XRPSCAN["XRPScan<br/>account labels<br/>(24h cached)"]
-        OPENAI["OpenAI<br/>Sentinel reasoning"]
-        RSS["12 RSS feeds<br/>SEC / Fed / BoE / BIS /<br/>ECB / crypto press"]
-        W3F["Web3Forms<br/>Trust new-domain<br/>notifier email"]
-    end
-
-    %% ──────────── CONNECTIONS ─────────────
-
-    %% consumer -> entry
-    AGENT -->|"MCP tools<br/>(stdio or HTTP/SSE)"| MCP
-    AGENT -->|"native x402"| DIRECT
-    HUMAN -->|HTTPS| DOTCOM
-
-    %% entry -> backend
-    DOTCOM -->|"Origin header<br/>= free preview"| SENTINEL
-    DOTCOM --> PULSE
-    DOTCOM --> TELEMETRY
-    DOTCOM --> TRUST
-
-    MCP -->|"HTTP passthrough<br/>caller's PAYMENT-SIGNATURE"| SENTINEL
-    MCP --> PULSE
-    MCP --> TELEMETRY
-    MCP --> TRUST
-
-    DIRECT -.->|"any of the above"| BACKEND
-
-    %% inter-service
-    PULSE -.->|"/events polling<br/>(domain lifecycle)"| TRUST
-    PULSE -.->|"/healthz<br/>(active_float context<br/>via internal bypass header)"| TELEMETRY
-    PULSE -.->|"sentinel_lookup<br/>(whale cross-ref)"| SENTINEL
-
-    %% backend -> ledger
-    SENTINEL -->|"validated ledger reads"| XRPL
-    PULSE --> XRPL
-    TELEMETRY --> XRPL
-    TRUST --> XRPL
-
-    SENTINEL -->|"verify + settle paid calls"| T54
-    PULSE --> T54
-    TELEMETRY --> T54
-    TRUST --> T54
-
-    T54 -->|"XRP / RLUSD<br/>~$0.10 USD per call"| TREASURY
-
-    %% backend -> external
-    SENTINEL -.-> XRPSCAN
-    PULSE -.-> XRPSCAN
-    TRUST -.-> XRPSCAN
-    SENTINEL -.-> OPENAI
-    PULSE -.-> RSS
-    TRUST -.-> W3F
+    AGENT --> MCP
+    AGENT --> DIRECT
+    HUMAN --> DOTCOM
+    MCP --> BACKEND
+    DIRECT --> BACKEND
+    DOTCOM --> BACKEND
+    BACKEND --> T54
+    BACKEND --> CDP
+    T54 --> TREASURY
+    CDP --> TREASURY
+    BACKEND -->|"validated ledger reads"| XRPL
+    SENTINEL -->|"nightly fingerprint<br/>from rwty5..."| XRPL
 ```
 
-## Quick reference
-
-### What each surface is for
+### Entry surfaces
 
 | Surface | Audience | Auth model |
 |---|---|---|
-| `xrpl-utilities.com` | Humans browsing the portfolio | Free preview via `Origin:` header (web bypass) |
-| `mcp.xrpl-utilities.io` | AI agents using MCP clients (Claude Desktop, SDKs) | Stateless passthrough; caller supplies own x402 |
-| `npm @xrpl-utilities/mcp` | AI agents running MCP locally via stdio | Same as above; runs on user's machine |
-| Direct API (`*.xrpl-utilities.io`) | Custom integrations, x402-xrpl SDK users | Native x402 v2 |
+| `xrpl-utilities.com` | People browsing the portfolio | Free on the site through a short-lived visitor pass |
+| `mcp.xrpl-utilities.io` | AI agents using MCP clients | Stateless passthrough; caller supplies its own x402 payment |
+| `npm @xrpl-utilities/mcp` | AI agents running MCP locally via stdio | Same as above; runs on the user's machine |
+| Direct API (`*.xrpl-utilities.io`) | Custom integrations | Native x402 |
 
-### What each backend does
+### Prices
 
-| Service | One-line | Pricing | Schema |
-|---|---|---|---|
-| **XR-Sentinel** | XRPL wallet activity-pattern classifier (0-100 score, 22-signal catalog, AI reasoning) | $0.10 per scan | 2.6.0 |
-| **XR-Pulse** | Normalized signal feed mixing public-source news, on-chain whales, and XLS-70/80/81 lifecycle | $0.10 per query | 1.10.1 |
-| **XR-Telemetry** | XRPL macro snapshot (supply, liquidity, AMM, derived Active Float, Burst Math floor) | $0.10 per snapshot | 1.1.0 |
-| **XR-Trust** | XLS-70/80/81 + XLS-40 DID directory and drill-down | $0.10 per call | 2026-11 |
+| Tier | Price | Examples |
+|---|---|---|
+| Data calls | $0.01 | Pulse market views, Telemetry series, Trust activity and jurisdictions, Vault daily-flow history, Flows correlation, Desk briefing |
+| Deep dives | $0.10 | Sentinel scan and history, Pulse event queries, Telemetry snapshot, Trust domains, Vault and Flows scans, Ledger statement |
+| Bundles | $0.05 to $0.25 | XRP market briefing $0.05; fund flow, permissioned venue and network snapshot $0.10; RWA token report $0.15; wallet check $0.25 |
+| Stream | $0.50 / $2.50 / $7.50 | Pulse live stream, 1h / 6h / 24h |
 
-### Inter-service edges (the dotted lines)
+Each tool's description and each 402 challenge carry the exact price.
+
+### Inter-service edges
 
 | From | To | Purpose | Auth |
 |---|---|---|---|
-| Pulse | Trust `/events` | XLS-70/80/81 lifecycle ingestion (every 120s) | Public read |
-| Pulse | Telemetry `/healthz` | Active Float context attached to whale events | internal sister-product bypass header |
-| Pulse | Sentinel (`sentinel_lookup`) | Cross-reference for whale addresses (sender + receiver classification) | internal sister-product bypass header |
+| Vault | Pulse `/stats/rwa-summary` | Issuer and AMM pool state | sister key |
+| Flows | Pulse, Telemetry | Exchange flow for the ETF correlation | sister key |
+| Telemetry | Flows, Vault | ETF holdings and RWA flow history | sister key |
+| Pulse | Sentinel | Classify whale senders and receivers | sister key |
+| Pulse bundles | Sentinel, Ledger, Trust, Telemetry, Flows | One answer built from several services | sister keys |
 
-### Schema-discipline boundary
+### Discovery surfaces
 
-Every backend exposes:
-
-- `/agents.json` — agent-discovery manifest (name, capabilities, endpoints, schema_version)
-- `/schema` — field-level output shape
-- `/healthz` — liveness + dependency probes
-- `/stats` — operational counters
-- `/.well-known/agents.json` — same as `/agents.json` at the canonical path
-
-Each repo has a pre-commit hook (`.githooks/pre-commit`) that blocks
-edits to `agents.json` without a corresponding `schema_version` bump.
-The MCP server's startup validator pings each service's live
-`/agents.json` and refuses to start if a registered tool's path is
-missing from the manifest.
+Every service exposes `/agents.json` (also at `/.well-known/agents.json`),
+`/.well-known/x402`, `/llms.txt`, `/schema`, `/openapi.json`, `/healthz` and
+`/uptime`. Each repo has a pre-commit hook that blocks a manifest change
+without a matching `schema_version` bump, and this server's
+`knownSchemaVersions` must list every live version.
 
 ### Payment flow
 
 ```
-Agent ──signed XRPL Payment as PAYMENT-SIGNATURE──▶ MCP server
-                                                       │
-                                                       │ forwards verbatim
-                                                       ▼
-                                                  Backend service
-                                                       │
-                                                       │ verify
-                                                       ▼
-                                                  t54 facilitator
-                                                       │
-                                                       │ submit to ledger
-                                                       ▼
-                                                  XRPL mainnet
-                                                       │
-                                                       │ ~3-5s ledger close
-                                                       ▼
-                                                  💰 Treasury (rKxTz...DBd5)
-                                                       │
-                                                       ▼
-                                                  Backend runs the work
-                                                       │
-                                                       ▼
-                                                  Response back through
-                                                  MCP/direct to agent
+Agent --signed payment as PAYMENT-SIGNATURE--> MCP server
+                                                  |
+                                                  | forwards verbatim
+                                                  v
+                                             Backend service
+                                                  |
+                                                  | verify (t54 or Coinbase)
+                                                  v
+                                             Backend runs the work
+                                                  |
+                                                  | settle on XRPL or Base
+                                                  v
+                                             Answer + PAYMENT-RESPONSE,
+                                             with a provenance block
 ```
 
-The MCP server holds no wallets, takes no cut, runs no proprietary
-logic. It's a transparent proxy; revenue flow is identical to direct
-API users.
+A failed answer is never settled, so the caller is not charged for it.
+
+### Verified Record
+
+- Every 200 answer on a paid route carries a `provenance` block: service,
+  `schema_version`, `served_at` and the newest validated XRP Ledger the
+  service had read (`index`, `hash`, `close_time`).
+- Each evening XR-Sentinel saves a fixed set of published figures, builds a
+  SHA3-512 Merkle root and writes it in a memo from
+  `rwty5XRq5zrqTZ7XMLgk3EqQ76V3SY8Gwy`. `GET https://sentinel.xrpl-utilities.io/proof`
+  lists the days; https://xrpl-utilities.com/verify/ checks one in the browser.
+
+The MCP server holds no wallets, takes no cut and runs no proprietary logic.
+It is a transparent proxy; revenue flow is identical to direct API users.
