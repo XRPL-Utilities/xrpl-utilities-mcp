@@ -28,9 +28,16 @@ Paid calls settle over x402 v2 in XRP or RLUSD on XRPL, or USDC on Base.
 The MCP server is a **stateless passthrough proxy**. It does not hold
 wallets, manage user accounts, or subsidize calls.
 
-Paid tools speak standard x402 over MCP. Deep dives and feeds cost $0.10 USD per call;
-XR-Pulse data tools cost $0.01 USD per call. Bundles cost $0.25 (wallet check) and $0.05
-(XRP market briefing).
+Paid tools speak standard x402 over MCP. Data tools (every tool marked $0.01 above)
+cost $0.01 USD per call. Deep dives, event queries and the Ledger statement cost $0.10.
+Bundles cost $0.05 (XRP market briefing), $0.10 (fund flow report, permissioned venue
+report, network snapshot), $0.15 (RWA token report) and $0.25 (wallet check).
+
+Every successful paid answer carries a `provenance` block: the service, its
+`schema_version`, `served_at`, and the newest validated XRP Ledger it had read
+(`index`, `hash`, `close_time`). Each evening a fingerprint of the day's published
+figures is written to the XRP Ledger; anyone can check a day at
+[xrpl-utilities.com/verify](https://xrpl-utilities.com/verify/).
 Call a paid tool without payment and you get a tool result with
 `isError: true` and the x402 `PaymentRequired` object in
 `structuredContent`. It lists three payment options: XRP and RLUSD on
