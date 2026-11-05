@@ -5,7 +5,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { SCHEMA_VERSION_RE, spliceSchemaVersion, isTransientFetchError } from "../scripts/contract_scrub.mjs";
+import { SCHEMA_VERSION_RE, spliceSchemaVersion, isTransientFetchError, rateLimitWaitMs, RATE_LIMIT_WAIT_CAP_MS } from "../scripts/contract_scrub.mjs";
 
 const SOURCE = '  knownSchemaVersions: ["1.0.0", "1.1.0"],\n';
 
@@ -119,4 +119,27 @@ test("address discovery reads the free Sentinel registry, not a paid route", () 
   const block = src.slice(i, i + 900);
   assert.match(block, /sentinel\.xrpl-utilities\.io\/registry\/rwa-issuers/);
   assert.doesNotMatch(block, /fetchJson\("https:\/\/pulse\.xrpl-utilities\.io\/stats\/rwa-summary"\)/);
+});
+
+// Pulse's free reads are 30 a minute per client with no Retry-After, and the
+// scrubber's own 429s failed the job on 2026-11-03 and 2026-11-05. A 429 must
+// be waited out once, not reported as a broken contract.
+test("a 429 with no Retry-After waits out a full 60 second window", () => {
+  assert.equal(rateLimitWaitMs(429, null), 61_000);
+  assert.equal(rateLimitWaitMs(429, undefined), 61_000);
+});
+
+test("a 429 honours a numeric Retry-After up to the cap", () => {
+  assert.equal(rateLimitWaitMs(429, "5"), 5_000);
+  assert.equal(rateLimitWaitMs(429, "9999"), RATE_LIMIT_WAIT_CAP_MS);
+});
+
+test("a malformed Retry-After falls back to the full window", () => {
+  assert.equal(rateLimitWaitMs(429, "-3"), 61_000);
+  assert.equal(rateLimitWaitMs(429, "5abc"), 61_000);
+  assert.equal(rateLimitWaitMs(429, "Wed, 21 Oct 2015 07:28:00 GMT"), 61_000);
+});
+
+test("anything other than a 429 is not retried for rate limiting", () => {
+  for (const s of [200, 402, 403, 500, 502, 503]) assert.equal(rateLimitWaitMs(s, "1"), null);
 });

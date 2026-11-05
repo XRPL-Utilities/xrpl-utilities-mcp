@@ -102,13 +102,29 @@ async function fetchJsonOnce(url, init = {}) {
     const res = await fetch(url, { ...init, signal: ctrl.signal });
     let body = null;
     try { body = await res.json(); } catch { /* non-JSON */ }
-    return { status: res.status, body };
+    return { status: res.status, body, retryAfter: res.headers.get("retry-after") };
   } finally {
     clearTimeout(t);
   }
 }
 
-async function fetchJson(url, init = {}) {
+// How long to wait before retrying a 429, or null when the answer is not a
+// 429. Pulse counts free reads per client in a sliding 60 second window (30
+// a minute) and sends no Retry-After, and the scrubber reads Pulse far more
+// than 30 times a minute from one runner, so a few late reads in each run got
+// 429 and failed the whole job (2026-11-03 and 2026-11-05). A Retry-After in
+// seconds is honoured up to the cap; otherwise wait out one full window.
+export const RATE_LIMIT_WAIT_CAP_MS = 65_000;
+export function rateLimitWaitMs(status, retryAfter) {
+  if (status !== 429) return null;
+  const secs = Number.parseInt(String(retryAfter ?? ""), 10);
+  if (Number.isFinite(secs) && secs >= 0 && String(secs) === String(retryAfter).trim()) {
+    return Math.min(secs * 1000, RATE_LIMIT_WAIT_CAP_MS);
+  }
+  return 61_000;
+}
+
+async function fetchJsonRetryTransient(url, init = {}) {
   // One retry on transient timeout/abort/network error. Real outages still
   // fail twice in a row; cold-start blips on freshly-deployed services
   // (Pulse, Telemetry, Trust) get a second chance.
@@ -121,6 +137,17 @@ async function fetchJson(url, init = {}) {
     await new Promise((r) => setTimeout(r, 750));
     return await fetchJsonOnce(url, init);
   }
+}
+
+async function fetchJson(url, init = {}) {
+  // A 429 is our own rate limit, not an outage: wait it out once. A second
+  // 429 in a row is reported as a failure like any other status.
+  const first = await fetchJsonRetryTransient(url, init);
+  const waitMs = rateLimitWaitMs(first.status, first.retryAfter);
+  if (waitMs === null) return first;
+  console.log(`wait  ${url} answered 429; retrying in ${Math.round(waitMs / 1000)}s`);
+  await new Promise((r) => setTimeout(r, waitMs));
+  return await fetchJsonRetryTransient(url, init);
 }
 
 function pickPath(tmpl, args) {
